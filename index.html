@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rebar Mill Application Hub</title>
+  <!-- Load Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Load SheetJS for Excel export in Hourly Log -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  <style>
+    /* Custom configuration and colors */
+    :root {
+      --main-blue: #07384A;
+      --teal-accent: #00A699;
+      --coral-accent: #FF5A5F;
+    }
+    .bg-main-blue { background-color: var(--main-blue); }
+    .text-main-blue { color: var(--main-blue); }
+    .text-teal { color: var(--teal-accent); }
+    .bg-teal-btn { background-color: var(--teal-accent); }
+    .text-coral { color: var(--coral-accent); }
+    .bg-coral-btn { background-color: var(--coral-accent); }
+    
+    /* General styles for the tabs */
+    .tab-btn.active {
+      border-color: var(--main-blue);
+      color: var(--main-blue);
+    }
+
+    body{
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  }
+
+    /* Style for the Hourly Log's colorful title text */
+    .rebar-title-text {
+        font-size: 1.5rem;
+        font-weight: 800;
+        background: linear-gradient(90deg, #00A699, #484848); 
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text; 
+    }
+    
+    /* Ensure the main content takes available height */
+    .main-content { min-height: calc(100vh - 80px); }
+
+    /* Hide specific elements from the original logs if they conflict with the unified UI */
+    .start-hidden { display: none !important; }
+
+    /* Pass/Guide Log form adjustments */
+    #guide-log-container .card {
+        max-width: 100%;
+        box-shadow: none;
+        padding: 0;
+        background: transparent;
+    }
+    #guide-log-container input, #guide-log-container select {
+        border-radius: 0.5rem;
+        padding: 0.6rem;
+    }
+
+    /* Hourly Log specific slot styling */
+    .hourly-slot-card {
+        background-color: #f8fafc; /* slate-50 */
+        border: 1px solid #e2e8f0; /* slate-200 */
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    
+    /* Grid for the 24 slots */
+    .hourly-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem; /* gap-6 */
+    }
+    
+    /* Scrollbar cleanup */
+    pre#preview {
+        max-height: 240px;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Main App Container -->
+  <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- Header & Tabs -->
+    <header class="mb-6 bg-white p-4 rounded-xl shadow-lg">
+      <h1 class="text-2xl font-extrabold text-main-blue mb-4 text-center">Rebar Mill Hub</h1>
+
+      <nav class="flex justify-center space-x-4 border-b border-gray-200" id="tabs">
+        <button data-view="hourly-log" class="tab-btn pb-2 px-3 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-main-blue transition duration-150 active:border-main-blue">
+          Hourly Production Log
+        </button>
+        <button data-view="guide-log" class="tab-btn pb-2 px-3 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-main-blue transition duration-150 active:border-main-blue">
+          Pass / Guide Change Log
+        </button>
+      </nav>
+    </header>
+
+    <main class="main-content">
+      
+      <!-- ----------------------------------------------------------- -->
+      <!-- Section 1: Hourly Production Log (Rebar Production Log v2.html) -->
+      <!-- ----------------------------------------------------------- -->
+      <div id="hourly-log-container" data-view-content class="p-4 bg-white rounded-xl shadow-lg">
+        
+        <h2 class="rebar-title-text mb-4 text-center">Hourly Production Log</h2>
+
+        <div class="flex flex-wrap gap-4 items-center mb-4 p-3 bg-gray-100 rounded-lg">
+          <label class="text-sm font-semibold text-gray-600">Date</label>
+          <input id="entryDate" type="date" class="p-2 border border-gray-300 rounded-lg rounded-full" />
+          <button id="todayBtn" class="px-3 py-1 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150">Today</button> 
+          <button id="resetAllBtn" class="bg-red-500 text-white px-3 py-1 font-semibold rounded-full hover:bg-red-600 transition duration-150 shadow-md">Reset All Data</button>
+       
+          <div class="flex-grow"></div>
+          <!-- Start hour controls kept for JS compatibility but hidden -->
+          <label class="text-sm font-semibold text-gray-600 start-hidden">Start hour</label>
+          <select id="startHour" class="p-2 border border-gray-300 rounded-lg start-hidden"></select>
+        </div>
+
+        <div class="flex flex-wrap gap-2 items-center mb-4">
+          </div>
+
+        <!-- New totals cards for Day and Night -->
+        <div class="flex flex-wrap gap-4 mb-6" id="totalsRow" aria-live="polite">
+          <div class="totals-card-hourly flex-1 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <h3 class="text-lg font-semibold mb-2 text-main-blue">Day Totals (07:00 - 19:00)</h3>
+            <div class="grid grid-cols-2 gap-2 text-sm" id="dayTotalsGrid">
+              <!-- populated by JS -->
+            </div>
+            <div class="mt-3">
+              <button id="shareDayBtn" class="w-full px-3 py-1 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150">Share Day (Text)</button>
+            </div>
+          </div>
+
+          <div class="totals-card-hourly flex-1 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+            <h3 class="text-lg font-semibold mb-2 text-main-blue">Night Totals (19:00 - 07:00)</h3>
+            <div class="grid grid-cols-2 gap-2 text-sm" id="nightTotalsGrid">
+              <!-- populated by JS -->
+            </div>
+            <div class="mt-3">
+              <button id="shareNightBtn" class="w-full px-3 py-1 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150">Share Night (Text)</button>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="text-xl font-bold mb-4 text-gray-700">Hourly Slots</h3>
+        <div id="slotsContainer" class="hourly-grid" aria-live="polite">
+          <!-- Slots populated by JS -->
+        </div>
+
+        <footer class="mt-6 text-sm text-gray-500 border-t pt-4">
+          Data stored locally per date in your browser. Export produces a single-sheet .xlsx.
+        </footer>
+      </div>
+
+      <!-- ----------------------------------------------------------- -->
+      <!-- Section 2: Pass / Guide Change Log (Pass & Guide Change Log v1.html) -->
+      <!-- ----------------------------------------------------------- -->
+      <div id="guide-log-container" data-view-content class="hidden flex justify-center">
+        <div class="w-full max-w-xl bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+      
+            <h2 class="text-2xl font-bold mb-6 text-coral text-center">Pass / Guide Change Log</h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            
+              <div class="flex flex-col">
+                <label for="dia" class="text-sm font-medium mb-1 text-gray-700">Size</label>
+                <select id="dia" class="border border-gray-300 rounded-lg">
+                  <option value="">Select</option>
+                  <option value="10">10MM</option>
+                  <option value="12">12MM</option>
+                  <option value="16">16MM</option>
+                  <option value="20">20MM</option>
+                  <option value="25">25MM</option>
+                  <option value="32">32MM</option>
+                </select>
+              </div>
+            
+              <div class="flex flex-col">
+                <label for="date_guide" class="text-sm font-medium mb-1 text-gray-700">Date</label>
+                <!-- Renamed ID to avoid conflict with 'entryDate' in Hourly Log -->
+                <input id="date_guide" type="date" class="border border-gray-300 rounded-lg" />
+              </div>
+
+              <div class="flex flex-col">
+                <label for="shift_guide" class="text-sm font-medium mb-1 text-gray-700">Shift</label>
+                <!-- Renamed ID to avoid conflict with 'shift' (was not defined but good practice) -->
+                <select id="shift_guide" class="border border-gray-300 rounded-lg">
+                  <option value="">-- select shift --</option>
+                  <option>DAY</option>
+                  <option>NIGHT</option>
+                </select>
+              </div>
+
+              <div class="flex flex-col">
+                <label for="billet" class="text-sm font-medium mb-1 text-gray-700">Billet No.</label>
+                <input id="billet" type="text" maxlength="3" class="border border-gray-300 rounded-lg" 
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" />
+              </div>
+
+              <div class="flex flex-col">
+                <label for="stand" class="text-sm font-medium mb-1 text-gray-700">Stand No.</label>
+                <select id="stand" class="border border-gray-300 rounded-lg">
+                  <option value="">-- select stand no --</option>
+                  <!-- Options populated by JS after size selection -->
+                  <option>A</option> <option>B</option>
+                  <option>1</option> <option>2</option> <option>3</option> <option>4</option> <option>5</option> <option>6</option> <option>7</option> <option>8</option> <option>9</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option>
+                </select>
+              </div>
+
+              <div class="flex flex-col col-span-1">
+                <label class="text-sm font-medium mb-1 text-gray-700">Changes</label>
+                <div class="flex flex-col gap-1">
+                  <label class="inline-flex items-center text-sm"><input id="passChange" type="checkbox" class="rounded text-main-blue mr-2" /> Pass Change</label>
+                  <label class="inline-flex items-center text-sm"><input id="guideChange" type="checkbox" class="rounded text-main-blue mr-2" /> Guide Change</label>
+                  <label class="inline-flex items-center text-sm"><input id="standChange" type="checkbox" class="rounded text-main-blue mr-2" /> Stand Change</label>
+                </div>
+              </div>
+
+              <div class="flex flex-col sm:col-span-2" id="guideTypeRow" style="display:none;">
+                <label for="guideType" class="text-sm font-medium mb-1 text-gray-700">Guide Type (if Guide Change selected)</label>
+                <select id="guideType" class="border border-gray-300 rounded-lg">
+                  <option value="">-- SELECT GUIDE TYPE --</option>
+                  <option>ENTRY</option>
+                  <option>DELIVERY</option>          
+                </select>
+              </div>
+
+              <div class="flex flex-col sm:col-span-2">
+                <label for="extra" class="text-sm font-medium mb-1 text-gray-700">Remarks (optional)</label>
+                <input id="extra" type="text" placeholder="any extra details..." class="border border-gray-300 rounded-lg" />
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <label for="preview" class="text-sm font-medium mb-1 text-gray-700">Formatted preview</label>
+              <pre id="preview" class="bg-gray-100 text-gray-700 p-4 rounded-lg overflow-auto text-sm">Fill the form and click "Generate"</pre>
+            </div>
+
+            <div class="flex flex-col gap-3 mt-6">
+              <button id="generate" class="bg-coral-btn text-white px-4 py-3 font-semibold rounded-lg hover:bg-red-600 transition duration-150 shadow-md">Generate</button>
+              <button id="copy" class="bg-white text-coral border border-gray-300 px-4 py-3 font-semibold rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Copy text</button>
+              <button id="wa" class="bg-white text-teal border border-gray-300 px-4 py-3 font-semibold rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Share to WhatsApp</button>
+              <button id="clear" class="bg-white text-gray-500 border border-gray-300 px-4 py-3 font-semibold rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Clear Form</button>
+            </div>
+
+            <div class="mt-4 text-xs text-gray-500 text-center">This WebApp is a controlled application. Always check with Production Manager for latest version.</div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+<script>
+  // =========================================================================
+  // CORE APPLICATION HUB LOGIC
+  // =========================================================================
+  const tabsContainer = document.getElementById('tabs');
+  const viewContainers = document.querySelectorAll('[data-view-content]');
+  const defaultView = 'hourly-log';
+
+  function switchView(viewName) {
+    viewContainers.forEach(container => {
+      container.classList.add('hidden');
+      if (container.id === `${viewName}-container`) {
+        container.classList.remove('hidden');
+      }
+    });
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.classList.remove('active', 'border-main-blue', 'text-main-blue');
+      btn.classList.add('border-transparent', 'text-gray-500');
+      if (btn.dataset.view === viewName) {
+        btn.classList.add('active', 'border-main-blue', 'text-main-blue');
+        btn.classList.remove('border-transparent', 'text-gray-500');
+      }
+    });
+  }
+
+  tabsContainer.addEventListener('click', (e) => {
+    if (e.target.classList.contains('tab-btn')) {
+      switchView(e.target.dataset.view);
+    }
+  });
+
+  // =========================================================================
+  // HOURLY PRODUCTION LOGIC (from Rebar Production Log v2.html)
+  // =========================================================================
+
+  // Configuration
+  const TOTAL_SLOTS = 24; // hourly slots
+  const START_HOUR = 7; // fixed hidden start hour (07:00 - 08:00)
+  
+  // Elements
+  const startHourSelect = document.getElementById('startHour');
+  const dateInput = document.getElementById('entryDate');
+  const container = document.getElementById('slotsContainer');
+
+
+
+  // Utilities
+  function pad(n){return (n<10?'0'+n:n)}
+  function formatSlot(hour){const end=(hour+1)%24; return pad(hour)+':00 - '+pad(end)+':00'}
+
+  // format date as DD-MMM-YYYY (e.g. 18-Nov-2025)
+  function formatDate(input){
+    if(!input) return '';
+    let y,m,d;
+    if(typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input)){
+      [y,m,d] = input.split('-');
+    }else if(input instanceof Date){
+      y = String(input.getFullYear());
+      m = pad(input.getMonth()+1);
+      d = pad(input.getDate());
+    }else{
+      const dt = new Date(input);
+      if(isNaN(dt)) return String(input);
+      y = String(dt.getFullYear()); m = pad(dt.getMonth()+1); d = pad(dt.getDate());
+    }
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${d}-${months[parseInt(m,10)-1]}-${y}`;
+  }
+
+  // Build startHour select (kept hidden for compatibility / debugging)
+  for(let h=0;h<24;h++){
+    const opt = document.createElement('option'); opt.value=h; opt.text = pad(h)+':00';
+    startHourSelect.appendChild(opt);
+  }
+  startHourSelect.value = START_HOUR;
+
+  // Date input default to today
+  function setToday(){ const d=new Date(); dateInput.value = d.toISOString().slice(0,10); }
+  setToday(); document.getElementById('todayBtn').onclick = setToday;
+
+  function buildSlots(){
+    container.innerHTML='';
+    const start = START_HOUR;
+    // Fields order: Discharged, Rolled, Cobble, Chop, Hotout, Total, Delay
+    const numericFields = ['Discharged','Rolled','Cobble','Chop']; // Core production metrics
+    
+    for(let i=0;i<TOTAL_SLOTS;i++){
+      const hour = (start + i) % 24;
+      const slot = document.createElement('div'); 
+      // Adjusted padding/class for better look with new layout
+      slot.className='p-4 rounded-xl hourly-slot-card flex flex-col justify-between'; 
+      slot.dataset.slotIndex=i; slot.dataset.hour=hour;
+      
+      // 1. Time Header (Redesigned - now inside the card, but wide and prominent)
+      const timeHeader = document.createElement('div'); 
+      timeHeader.className='text-xl font-extrabold text-main-blue mb-3 border-b-2 border-teal-accent pb-1'; 
+      timeHeader.textContent = formatSlot(hour);
+      slot.appendChild(timeHeader);
+      
+      // Container for Production & Secondary Metrics (6 fields in 6 columns on large screens)
+      const metricContainer = document.createElement('div');
+      // Responsive grid for metrics: 2 cols on mobile, 3 on small, 6 on large
+      metricContainer.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3';
+      
+      // Helper function to create labeled input fields
+      const createLabeledInput = (f, isTotal = false) => {
+          const key = f.toLowerCase();
+          const label = document.createElement('label');
+          label.className = 'text-xs font-medium text-gray-700 block';
+          label.textContent = f;
+          const inp = document.createElement('input');
+          inp.type='number'; inp.step='any'; 
+          inp.className = `${key} w-full p-2 border border-gray-300 rounded-lg text-sm transition-colors duration-150 ${isTotal ? 'font-bold bg-yellow-100' : 'bg-white'}`; 
+          inp.dataset.field = f;
+          label.appendChild(inp);
+          return label;
+      };
+
+      // 2. Core Production Metrics (Discharged, Rolled, Cobble, Chop)
+      numericFields.forEach((f)=>{
+        metricContainer.appendChild(createLabeledInput(f));
+      });
+
+      // 3. Hotout
+      metricContainer.appendChild(createLabeledInput('Hotout'));
+      
+      // 4. Total (Placed next to Hotout)
+      metricContainer.appendChild(createLabeledInput('Total', true));
+
+      slot.appendChild(metricContainer);
+
+      // 5. Delay (Made Wider - now uses full width row and text-area styling for bigger look)
+      const delayRow = document.createElement('div');
+      delayRow.className = 'flex flex-col mb-3';
+      const delayLabel = document.createElement('label');
+      delayLabel.className = 'text-xs font-medium text-gray-700 block mb-1';
+      delayLabel.textContent = 'Delay';
+      const delayInp = document.createElement('input'); // Keep as input for single line convenience
+      delayInp.type = 'text'; 
+      delayInp.placeholder = 'Describe any delays or comments here...'; 
+      // Apply w-full and padding for a larger appearance
+      delayInp.className = 'delay w-full p-3 border border-gray-300 rounded-lg text-sm h-12'; 
+      delayInp.dataset.field = 'Delay';
+      
+      delayRow.appendChild(delayLabel);
+      delayRow.appendChild(delayInp);
+      slot.appendChild(delayRow);
+      
+      // 6. Share Button (Aligned to the right)
+      const actionRow = document.createElement('div');
+      actionRow.className = 'flex justify-end';
+      const shareTextBtn = document.createElement('button');
+      shareTextBtn.type = 'button';
+      shareTextBtn.className = 'flex-shrink-0 px-4 py-2 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-600 transition duration-150 text-sm shadow-md';
+      shareTextBtn.textContent = 'Share';
+      shareTextBtn.addEventListener('click', ()=> exportSlotAsText(slot));
+      
+      actionRow.appendChild(shareTextBtn);
+      slot.appendChild(actionRow);
+
+      container.appendChild(slot);
+    }
+    loadFromStorage();
+    renderTotals(); // update totals after slots built
+  }
+
+  // Storage key per date
+  function storageKeyForDate(dateStr){ return 'hourly-logger@'+dateStr; }
+
+  function gatherData(){
+    const rows=[];
+    const slots = container.querySelectorAll('.hourly-slot-card');
+    slots.forEach(s=>{
+      const hour = parseInt(s.dataset.hour,10);
+      const timeLabel = formatSlot(hour);
+      const discharged = s.querySelector('input.discharged').value || '';
+      const rolled = s.querySelector('input.rolled').value || '';
+      const cobble = s.querySelector('input.cobble').value || '';
+      const chop = s.querySelector('input.chop').value || '';
+      const hotout = s.querySelector('input.hotout').value || '';
+      const delay = s.querySelector('input.delay').value || '';
+      const total = s.querySelector('input.total').value || '';
+      rows.push({TimeSlot:timeLabel, Discharged:discharged, Rolled:rolled, Cobble:cobble, Chop:chop, Hotout:hotout, Delay:delay, Total:total});
+    });
+    return rows;
+  }
+
+  function loadFromStorage(){
+    const date = dateInput.value; if(!date) return;
+    const key = storageKeyForDate(date);
+    const raw = localStorage.getItem(key);
+    if(!raw) {
+      // reset fields and totals
+      container.querySelectorAll('.hourly-slot-card').forEach(s=>s.querySelectorAll('input').forEach(i=>i.value=''));
+      renderTotals();
+      return;
+    }
+    try{
+      const parsed = JSON.parse(raw);
+      const rows = parsed.rows || [];
+      const slots = container.querySelectorAll('.hourly-slot-card');
+      slots.forEach((s,i)=>{
+        const row = rows[i] || {};
+        // The structure must be flexible enough to handle old/new data models
+        s.querySelector('input.discharged').value = row.Discharged ?? '';
+        s.querySelector('input.rolled').value = row.Rolled ?? '';
+        s.querySelector('input.cobble').value = row.Cobble ?? '';
+        s.querySelector('input.chop').value = row.Chop ?? '';
+        s.querySelector('input.hotout').value = row.Hotout ?? '';
+        s.querySelector('input.delay').value = row.Delay ?? '';
+        s.querySelector('input.total').value = row.Total ?? '';
+      });
+    }catch(e){console.error(e)}
+    renderTotals();
+  }
+
+  function resetAll(){
+    if(!confirm('Delete ALL saved data from this browser? This cannot be undone.')) return;
+    // remove keys that start with hourly-logger@
+    Object.keys(localStorage).forEach(k=>{ if(k.startsWith('hourly-logger@')) localStorage.removeItem(k); });
+    container.querySelectorAll('.hourly-slot-card').forEach(s=>s.querySelectorAll('input').forEach(i=>i.value=''));
+    alert('All data removed.');
+    renderTotals();
+  }
+
+  // Compute totals for day and night
+  const numericFieldsInTotal = ['Discharged','Rolled','Cobble','Chop','Hotout','Total'];
+  // Day defined 07..18 inclusive, Night otherwise
+  const DAY_START = 7, DAY_END = 18;
+
+  function computeTotals(){
+    const totals = {day:{}, night:{}};
+    numericFieldsInTotal.forEach(f=>{ totals.day[f]=0; totals.night[f]=0; });
+    container.querySelectorAll('.hourly-slot-card').forEach(s=>{
+      const hour = parseInt(s.dataset.hour,10);
+      const isDay = (DAY_START <= DAY_END) ? (hour >= DAY_START && hour <= DAY_END) : !(hour > DAY_END && hour < DAY_START);
+      numericFieldsInTotal.forEach(f=>{
+        const cls = f.toLowerCase();
+        const valStr = (s.querySelector('input.'+cls) && s.querySelector('input.'+cls).value) || '';
+        const n = parseFloat(valStr);
+        const num = isNaN(n) ? 0 : n;
+        if(isDay) totals.day[f] += num; else totals.night[f] += num;
+      });
+    });
+    // round to 2 decimals if needed
+    numericFieldsInTotal.forEach(f=>{
+      totals.day[f] = Math.round((totals.day[f] + Number.EPSILON)*100)/100;
+      totals.night[f] = Math.round((totals.night[f] + Number.EPSILON)*100)/100;
+    });
+    return totals;
+  }
+
+  function renderTotals(){
+    const t = computeTotals();
+    const dayGrid = document.getElementById('dayTotalsGrid');
+    const nightGrid = document.getElementById('nightTotalsGrid');
+    dayGrid.innerHTML = '';
+    nightGrid.innerHTML = '';
+    // show fields in two-column layout: label | value
+    numericFieldsInTotal.forEach(f=>{
+      dayGrid.innerHTML += `<div class="font-medium">${f}:</div><div class="text-right text-gray-600">${t.day[f]}</div>`;
+      nightGrid.innerHTML += `<div class="font-medium">${f}:</div><div class="text-right text-gray-600">${t.night[f]}</div>`;
+    });
+  }
+
+  
+
+  // Export a single slot as plain text and open native share or WhatsApp fallback
+  async function exportSlotAsText(slot){
+    const dateStr = formatDate(dateInput.value || new Date().toISOString().slice(0,10));
+    const hour = parseInt(slot.dataset.hour,10);
+    const timeLabel = formatSlot(hour);
+    const discharged = slot.querySelector('input.discharged').value.trim() || '0';
+    const rolled = slot.querySelector('input.rolled').value.trim() || '0';
+    const cobble = slot.querySelector('input.cobble').value.trim() || '0';
+    const chop = slot.querySelector('input.chop').value.trim() || '0';
+    const hotout = slot.querySelector('input.hotout').value.trim() || '0';
+    const delay = slot.querySelector('input.delay').value.trim() || '-';
+    const total = slot.querySelector('input.total').value.trim() || '0';
+
+    const lines = [
+      `${dateStr}`,
+      `*${timeLabel}*`,
+      `Discharged: ${discharged}`,
+      `Rolled: ${rolled}`,
+      `Cobble: ${cobble}`,
+      `Chop: ${chop}`,
+      `Hotout: ${hotout}`,
+      `Delay: ${delay}`,
+      `*Total: ${total}*`
+    ];
+    const text = lines.join('\n');
+
+    // Try Web Share API
+    if(navigator.share){
+      try{
+        await navigator.share({ title: `Hourly ${dateStr} ${timeLabel}`, text });
+        return;
+      }catch(e){}
+    }
+
+    // Fallback: copy to clipboard then open WhatsApp web
+    try{
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        await navigator.clipboard.writeText(text);
+        // Note: Using a custom modal instead of alert()
+        document.getElementById('hourly-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg" class="fixed top-4 right-4 bg-teal-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard.</div>');
+        setTimeout(() => document.getElementById('copy-msg')?.remove(), 2000);
+      }
+    }catch(e){ /* ignore clipboard errors */ }
+
+    const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+    window.open(waUrl, '_blank');
+  }
+
+  // Share totals as text (day or night)
+  async function shareTotalsAsText(kind){ // kind = 'day' | 'night'
+    const totals = computeTotals();
+    const t = totals[kind];
+    const dateStr = formatDate(dateInput.value || new Date().toISOString().slice(0,10));
+    const header = kind === 'day' ? 'Day Totals (07:00 - 19:00)' : 'Night Totals (19:00 - 07:00)';
+    const lines = [
+      `${dateStr}`,
+      `*${header}*`,
+      `Discharged: ${t.Discharged}`,
+      `Rolled: ${t.Rolled}`,
+      `Cobble: ${t.Cobble}`,
+      `Chop: ${t.Chop}`,
+      `Hotout: ${t.Hotout}`,
+      `*Total: ${t.Total}*`
+    ];
+    const text = lines.join('\n');
+
+    if(navigator.share){
+      try{
+        await navigator.share({ title: `${header} ${dateStr}`, text });
+        return;
+      }catch(e){}
+    }
+
+    try{ 
+        if(navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text); 
+            // Note: Using a custom modal instead of alert()
+            document.getElementById('hourly-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg-totals" class="fixed top-4 right-4 bg-teal-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard.</div>');
+            setTimeout(() => document.getElementById('copy-msg-totals')?.remove(), 2000);
+        }
+    }catch(e){}
+    const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+    window.open(waUrl, '_blank');
+  }
+
+  // Event wiring for Hourly Log
+  document.getElementById('resetAllBtn').addEventListener('click', resetAll);
+ 
+  dateInput.addEventListener('change', loadFromStorage);
+  document.getElementById('shareDayBtn').addEventListener('click', ()=> shareTotalsAsText('day'));
+  document.getElementById('shareNightBtn').addEventListener('click', ()=> shareTotalsAsText('night'));
+
+  // Recalculate totals when any numeric input changes (event delegation)
+  container.addEventListener('input', (e)=>{
+    if(e.target && (e.target.tagName === 'INPUT')){
+      renderTotals();
+    }
+  });
+
+  // Small helper: auto-save every 90 seconds (non-blocking)
+  setInterval(()=>{
+      const date = dateInput.value; 
+      if(!date) return; 
+      try{ 
+          localStorage.setItem(storageKeyForDate(date), JSON.stringify({startHour: START_HOUR, rows: gatherData(), savedAt: new Date().toISOString()})); 
+      }catch(e){/*ignore*/}
+      renderTotals();
+  }, 90_000);
+  
+  // =========================================================================
+  // PASS / GUIDE CHANGE LOGIC (from Pass & Guide Change Log v1.html)
+  // =========================================================================
+
+  // Elements (renamed date/shift to avoid conflict, although IDs are now unique)
+  const size = document.getElementById('dia');
+  const dateIn = document.getElementById('date_guide'); // Renamed
+  const shift = document.getElementById('shift_guide'); // Renamed
+  const billet = document.getElementById('billet');
+  const stand = document.getElementById('stand');
+  const passChange = document.getElementById('passChange');
+  const guideChange = document.getElementById('guideChange');
+  const standChange = document.getElementById('standChange');
+  const guideTypeRow = document.getElementById('guideTypeRow');
+  const guideType = document.getElementById('guideType');
+  const extra = document.getElementById('extra');
+  const preview = document.getElementById('preview');
+  const generateBtn = document.getElementById('generate');
+  const copyBtn = document.getElementById('copy');
+  const waBtn = document.getElementById('wa');
+  const clearBtn = document.getElementById('clear');
+
+  // Initial form setup
+  dateIn.value = new Date().toISOString().split('T')[0];
+  const hour = new Date().getHours();
+  shift.value = (hour >= 8 && hour < 20) ? 'DAY' : 'NIGHT';
+
+  // Show/hide guide type input
+  guideChange.addEventListener('change', () => {
+    guideTypeRow.style.display = guideChange.checked ? 'flex' : 'none';
+    if(!guideChange.checked) guideType.value = '';
+    updatePreviewGuide();
+  });
+
+  function fmtEmpty(v){ return (v||'').toString().trim(); }
+
+  function buildText(){
+    const vsize = fmtEmpty(size.value);
+    const d = fmtEmpty(dateIn.value);
+    const s = fmtEmpty(shift.value);
+    const b = fmtEmpty(billet.value);
+    const st = fmtEmpty(stand.value);
+    const pc = passChange.checked ? 'Yes' : 'No';
+    const gc = guideChange.checked ? 'Yes' : 'No';
+    const sc = standChange.checked ? 'Yes' : 'No';
+    const gt = fmtEmpty(guideType.value);
+    const ex = fmtEmpty(extra.value);
+
+    // Use readable date if available
+    let dateText = d;
+    if(d){
+      try{ const dt = new Date(d); dateText = dt.toLocaleDateString('en-GB'); }catch(e){}
+    }
+
+    const lines = [];
+    lines.push('*PASS / GUIDE CHANGE REPORT*');
+    lines.push('Size: ' + (vsize || '-')+'MM');
+    lines.push('Date: ' + (dateText || '-'));
+    lines.push('Shift: ' + (s || '-'));
+    lines.push('Billet No: ' + (b || '-'));
+    lines.push('*Stand No: ' + (st || '-')+'*'); // Changed 'Old Stand No' to 'Stand No' for simplicity
+
+    lines.push('\nChanges:');
+    lines.push('- Pass Change: ' + pc);
+    lines.push('- Guide Change: ' + gc + (gc === 'Yes' && gt ? (' (Type: ' + gt + ')') : ''));
+    lines.push('- Stand Change: ' + sc);
+
+    if(ex) lines.push('\nRemarks: ' + ex);
+
+    
+    return lines.join('\n');
+  }
+
+  function updatePreviewGuide(){ preview.textContent = buildText(); }
+
+  generateBtn.addEventListener('click', updatePreviewGuide);
+
+  copyBtn.addEventListener('click', async () => {
+    const text = buildText();
+    try{
+      await navigator.clipboard.writeText(text);
+      document.getElementById('guide-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg-guide" class="fixed top-4 right-4 bg-coral-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard.</div>');
+      setTimeout(() => document.getElementById('copy-msg-guide')?.remove(), 2000);
+    }catch(e){
+      // fallback
+      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+      document.getElementById('guide-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg-guide-fail" class="fixed top-4 right-4 bg-coral-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard (fallback).</div>');
+      setTimeout(() => document.getElementById('copy-msg-guide-fail')?.remove(), 2000);
+    }
+  });
+
+  waBtn.addEventListener('click', () => {
+    const text = buildText();
+    const encoded = encodeURIComponent(text);
+    const url = 'https://api.whatsapp.com/send?text=' + encoded;
+    window.open(url, '_blank');
+  });
+
+  clearBtn.addEventListener('click', ()=>{
+    dateIn.value = new Date().toISOString().split('T')[0];
+    shift.value = (new Date().getHours() >= 8 && new Date().getHours() < 20) ? 'DAY' : 'NIGHT'; 
+    billet.value=''; 
+    stand.value=''; 
+    passChange.checked=false; 
+    guideChange.checked=false; 
+    standChange.checked=false; 
+    guideType.value=''; 
+    extra.value=''; 
+    guideTypeRow.style.display='none'; 
+    preview.textContent='Fill the form and click "Generate"';
+    updateStandOptions(); // Reset stand options
+    size.value = ''; // Clear size selection
+  });
+
+  // live preview for convenience
+  [size, dateIn, shift, billet, stand, guideType, extra].forEach(el=>el.addEventListener('input', updatePreviewGuide));
+  [passChange, guideChange, standChange].forEach(cb=>cb.addEventListener('change', updatePreviewGuide));
+
+
+  size.addEventListener("change", updateStandOptions);
+
+  function updateStandOptions() {
+    const value = size.value;
+    stand.innerHTML = "<option value=''>-- select stand no --</option>"; // clear and add default
+
+    // Always include A and B
+    const letters = ["A", "B"];
+    letters.forEach(l => {
+      const opt = document.createElement("option");
+      opt.value = l;
+      opt.textContent = l;
+      stand.appendChild(opt);
+    });
+
+    let maxStand = 18;
+    let omit = [];
+
+    if (value === "10") maxStand = 18;
+    else if (value === "12" || value === "16") maxStand = 16;
+    else if (value === "20") maxStand = 14;
+    else if (value === "25") maxStand = 12;
+    else if (value === "32") {
+      maxStand = 12;
+      omit = [9, 10];
+    }
+
+    for (let i = 1; i <= maxStand; i++) {
+      if (omit.includes(i)) continue;
+
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.textContent = i;
+      stand.appendChild(opt);
+    }
+    updatePreviewGuide();
+  }
+  
+  // =========================================================================
+  // INITIALIZATION
+  // =========================================================================
+  
+  // Initialize Hourly Log components
+  buildSlots();
+
+  // Initialize Pass/Guide Log components
+  updateStandOptions(); 
+
+  // Set default view on load
+  switchView(defaultView);
+
+</script>
+</body>
+</html>
