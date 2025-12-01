@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rebar Mill Application Hub</title>
+  <!-- Load Inter Font from Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
   <!-- Load Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Load SheetJS for Excel export in Hourly Log -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+  
   <style>
     /* Custom configuration and colors */
     :root {
@@ -18,6 +18,12 @@
       --teal-accent: #00A699;
       --coral-accent: #FF5A5F;
     }
+
+    /* Apply Inter font globally */
+    body {
+        font-family: 'Inter', sans-serif;
+    }
+
     .bg-main-blue { background-color: var(--main-blue); }
     .text-main-blue { color: var(--main-blue); }
     .text-teal { color: var(--teal-accent); }
@@ -30,11 +36,6 @@
       border-color: var(--main-blue);
       color: var(--main-blue);
     }
-
-    body{
-  font-family: "Inter", sans-serif;
-  font-optical-sizing: auto;
-  }
 
     /* Style for the Hourly Log's colorful title text */
     .rebar-title-text {
@@ -91,9 +92,9 @@
 
     <!-- Header & Tabs -->
     <header class="mb-6 bg-white p-4 rounded-xl shadow-lg">
-      <h1 class="text-2xl font-extrabold text-main-blue mb-4 text-center">Rebar Mill Hub</h1>
+      <h1 class="text-3xl font-extrabold text-main-blue mb-4">Rebar Mill Operations Hub</h1>
 
-      <nav class="flex justify-center space-x-4 border-b border-gray-200" id="tabs">
+      <nav class="flex space-x-4 border-b border-gray-200" id="tabs">
         <button data-view="hourly-log" class="tab-btn pb-2 px-3 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-main-blue transition duration-150 active:border-main-blue">
           Hourly Production Log
         </button>
@@ -110,14 +111,15 @@
       <!-- ----------------------------------------------------------- -->
       <div id="hourly-log-container" data-view-content class="p-4 bg-white rounded-xl shadow-lg">
         
-        <h2 class="rebar-title-text mb-4 text-center">Hourly Production Log</h2>
+        <h2 class="rebar-title-text mb-4 text-center">Hourly Mill Production Data Logger</h2>
 
         <div class="flex flex-wrap gap-4 items-center mb-4 p-3 bg-gray-100 rounded-lg">
           <label class="text-sm font-semibold text-gray-600">Date</label>
           <input id="entryDate" type="date" class="p-2 border border-gray-300 rounded-lg rounded-full" />
-          <button id="todayBtn" class="px-3 py-1 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150">Today</button> 
-          <button id="resetAllBtn" class="bg-red-500 text-white px-3 py-1 font-semibold rounded-full hover:bg-red-600 transition duration-150 shadow-md">Reset All Data</button>
-       
+          <!-- Updated Today button class for consistent height/padding -->
+          <button id="todayBtn" class="px-3 py-1 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150">Today</button>
+          <button id="resetAllBtn" class="bg-red-500 text-white px-3 py-1 font-semibold rounded-full hover:bg-red-600 transition duration-150 shadow-md">Reset</button>
+        
           <div class="flex-grow"></div>
           <!-- Start hour controls kept for JS compatibility but hidden -->
           <label class="text-sm font-semibold text-gray-600 start-hidden">Start hour</label>
@@ -125,7 +127,7 @@
         </div>
 
         <div class="flex flex-wrap gap-2 items-center mb-4">
-          </div>
+         </div>
 
         <!-- New totals cards for Day and Night -->
         <div class="flex flex-wrap gap-4 mb-6" id="totalsRow" aria-live="polite">
@@ -156,7 +158,7 @@
         </div>
 
         <footer class="mt-6 text-sm text-gray-500 border-t pt-4">
-          Data stored locally per date in your browser. Export produces a single-sheet .xlsx.
+         This WEBAPP is a controlled application.
         </footer>
       </div>
 
@@ -165,7 +167,7 @@
       <!-- ----------------------------------------------------------- -->
       <div id="guide-log-container" data-view-content class="hidden flex justify-center">
         <div class="w-full max-w-xl bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-      
+            
             <h2 class="text-2xl font-bold mb-6 text-coral text-center">Pass / Guide Change Log</h2>
             
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -224,18 +226,28 @@
                 </div>
               </div>
 
+              <!-- UPDATED: Replaced single select with multiple checkboxes for Guide Types -->
               <div class="flex flex-col sm:col-span-2" id="guideTypeRow" style="display:none;">
-                <label for="guideType" class="text-sm font-medium mb-1 text-gray-700">Guide Type (if Guide Change selected)</label>
-                <select id="guideType" class="border border-gray-300 rounded-lg">
-                  <option value="">-- SELECT GUIDE TYPE --</option>
-                  <option>ENTRY</option>
-                  <option>DELIVERY</option>          
-                </select>
+                <label class="text-sm font-medium mb-2 text-gray-700">Guide Types Changed</label>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                  <label class="inline-flex items-center">
+                    <input id="guideTypeEntry" type="checkbox" class="guide-type-checkbox rounded text-main-blue mr-2" data-guide-type="Entry" /> Entry
+                  </label>
+                  <label class="inline-flex items-center">
+                    <input id="guideTypeDelivery" type="checkbox" class="guide-type-checkbox rounded text-main-blue mr-2" data-guide-type="Delivery" /> Delivery
+                  </label>
+                  <label class="inline-flex items-center">
+                    <input id="guideTypeRepeaters" type="checkbox" class="guide-type-checkbox rounded text-main-blue mr-2" data-guide-type="Slitter" /> Slitter
+                  </label>
+                  <label class="inline-flex items-center">
+                    <input id="guideTypeExit" type="checkbox" class="guide-type-checkbox rounded text-main-blue mr-2" data-guide-type="Others" /> Others
+                  </label>
+                </div>
               </div>
 
               <div class="flex flex-col sm:col-span-2">
                 <label for="extra" class="text-sm font-medium mb-1 text-gray-700">Remarks (optional)</label>
-                <input id="extra" type="text" placeholder="any extra details..." class="border border-gray-300 rounded-lg" />
+                <input id="extra" type="text" class="border border-gray-300 rounded-lg" />
               </div>
             </div>
 
@@ -251,7 +263,7 @@
               <button id="clear" class="bg-white text-gray-500 border border-gray-300 px-4 py-3 font-semibold rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Clear Form</button>
             </div>
 
-            <div class="mt-4 text-xs text-gray-500 text-center">This WebApp is a controlled application. Always check with Production Manager for latest version.</div>
+            <div class="mt-4 text-xs text-gray-500 text-center">This WEBAPP is a controlled application.</div>
         </div>
       </div>
 
@@ -302,7 +314,7 @@
   const startHourSelect = document.getElementById('startHour');
   const dateInput = document.getElementById('entryDate');
   const container = document.getElementById('slotsContainer');
-
+  const exportExcelBtn = document.getElementById('exportExcelBtn');
 
 
   // Utilities
@@ -340,89 +352,103 @@
   setToday(); document.getElementById('todayBtn').onclick = setToday;
 
   function buildSlots(){
+    console.log("Attempting to build hourly slots...");
+    if (!container) {
+        console.error("ERROR: The 'slotsContainer' element was not found in the DOM. Cannot build slots.");
+        return;
+    }
+    
     container.innerHTML='';
     const start = START_HOUR;
     // Fields order: Discharged, Rolled, Cobble, Chop, Hotout, Total, Delay
     const numericFields = ['Discharged','Rolled','Cobble','Chop']; // Core production metrics
     
-    for(let i=0;i<TOTAL_SLOTS;i++){
-      const hour = (start + i) % 24;
-      const slot = document.createElement('div'); 
-      // Adjusted padding/class for better look with new layout
-      slot.className='p-4 rounded-xl hourly-slot-card flex flex-col justify-between'; 
-      slot.dataset.slotIndex=i; slot.dataset.hour=hour;
-      
-      // 1. Time Header (Redesigned - now inside the card, but wide and prominent)
-      const timeHeader = document.createElement('div'); 
-      timeHeader.className='text-xl font-extrabold text-main-blue mb-3 border-b-2 border-teal-accent pb-1'; 
-      timeHeader.textContent = formatSlot(hour);
-      slot.appendChild(timeHeader);
-      
-      // Container for Production & Secondary Metrics (6 fields in 6 columns on large screens)
-      const metricContainer = document.createElement('div');
-      // Responsive grid for metrics: 2 cols on mobile, 3 on small, 6 on large
-      metricContainer.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3';
-      
-      // Helper function to create labeled input fields
-      const createLabeledInput = (f, isTotal = false) => {
-          const key = f.toLowerCase();
-          const label = document.createElement('label');
-          label.className = 'text-xs font-medium text-gray-700 block';
-          label.textContent = f;
-          const inp = document.createElement('input');
-          inp.type='number'; inp.step='any'; 
-          inp.className = `${key} w-full p-2 border border-gray-300 rounded-lg text-sm transition-colors duration-150 ${isTotal ? 'font-bold bg-yellow-100' : 'bg-white'}`; 
-          inp.dataset.field = f;
-          label.appendChild(inp);
-          return label;
-      };
+    try {
+        for(let i=0;i<TOTAL_SLOTS;i++){
+          const hour = (start + i) % 24;
+          const slot = document.createElement('div'); 
+          // Adjusted padding/class for better look with new layout
+          slot.className='p-4 rounded-xl hourly-slot-card flex flex-col justify-between'; 
+          slot.dataset.slotIndex=i; slot.dataset.hour=hour;
+          
+          // 1. Time Header (Redesigned - now inside the card, but wide and prominent)
+          const timeHeader = document.createElement('div'); 
+          timeHeader.className='text-xl font-extrabold text-main-blue mb-3 border-b-2 border-teal-accent pb-1'; 
+          timeHeader.textContent = formatSlot(hour);
+          slot.appendChild(timeHeader);
+          
+          // Container for Production & Secondary Metrics (6 fields in 6 columns on large screens)
+          const metricContainer = document.createElement('div');
+          // Responsive grid for metrics: 2 cols on mobile, 3 on small, 6 on large
+          metricContainer.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3';
+          
+          // Helper function to create labeled input fields
+          const createLabeledInput = (f, isTotal = false) => {
+              const key = f.toLowerCase();
+              const label = document.createElement('label');
+              label.className = 'text-xs font-medium text-gray-700 block';
+              label.textContent = f;
+              const inp = document.createElement('input');
+              inp.type='number'; inp.step='any'; 
+              // Placeholder removed per user request
+              inp.className = `${key} w-full p-2 border border-gray-300 rounded-lg text-sm transition-colors duration-150 ${isTotal ? 'font-bold bg-yellow-100' : 'bg-white'}`; 
+              inp.dataset.field = f;
+              label.appendChild(inp);
+              return label;
+          };
 
-      // 2. Core Production Metrics (Discharged, Rolled, Cobble, Chop)
-      numericFields.forEach((f)=>{
-        metricContainer.appendChild(createLabeledInput(f));
-      });
+          // 2. Core Production Metrics (Discharged, Rolled, Cobble, Chop)
+          numericFields.forEach((f)=>{
+            metricContainer.appendChild(createLabeledInput(f));
+          });
 
-      // 3. Hotout
-      metricContainer.appendChild(createLabeledInput('Hotout'));
-      
-      // 4. Total (Placed next to Hotout)
-      metricContainer.appendChild(createLabeledInput('Total', true));
+          // 3. Hotout
+          metricContainer.appendChild(createLabeledInput('Hotout'));
+          
+          // 4. Total (Placed next to Hotout)
+          metricContainer.appendChild(createLabeledInput('Total', true));
 
-      slot.appendChild(metricContainer);
+          slot.appendChild(metricContainer);
 
-      // 5. Delay (Made Wider - now uses full width row and text-area styling for bigger look)
-      const delayRow = document.createElement('div');
-      delayRow.className = 'flex flex-col mb-3';
-      const delayLabel = document.createElement('label');
-      delayLabel.className = 'text-xs font-medium text-gray-700 block mb-1';
-      delayLabel.textContent = 'Delay';
-      const delayInp = document.createElement('input'); // Keep as input for single line convenience
-      delayInp.type = 'text'; 
-      delayInp.placeholder = 'Describe any delays or comments here...'; 
-      // Apply w-full and padding for a larger appearance
-      delayInp.className = 'delay w-full p-3 border border-gray-300 rounded-lg text-sm h-12'; 
-      delayInp.dataset.field = 'Delay';
-      
-      delayRow.appendChild(delayLabel);
-      delayRow.appendChild(delayInp);
-      slot.appendChild(delayRow);
-      
-      // 6. Share Button (Aligned to the right)
-      const actionRow = document.createElement('div');
-      actionRow.className = 'flex justify-end';
-      const shareTextBtn = document.createElement('button');
-      shareTextBtn.type = 'button';
-      shareTextBtn.className = 'flex-shrink-0 px-4 py-2 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-600 transition duration-150 text-sm shadow-md';
-      shareTextBtn.textContent = 'Share';
-      shareTextBtn.addEventListener('click', ()=> exportSlotAsText(slot));
-      
-      actionRow.appendChild(shareTextBtn);
-      slot.appendChild(actionRow);
+          // 5. Delay (Made Wider - now uses full width row and text-area styling for bigger look)
+          const delayRow = document.createElement('div');
+          delayRow.className = 'flex flex-col mb-3';
+          const delayLabel = document.createElement('label');
+          delayLabel.className = 'text-xs font-medium text-gray-700 block mb-1';
+          delayLabel.textContent = 'Delay / Reasons for Interruption (Mandatory)';
+          const delayInp = document.createElement('input'); // Keep as input for single line convenience
+          delayInp.type = 'text'; 
+          // Placeholder removed per user request
+          // Apply w-full and padding for a larger appearance
+          delayInp.className = 'delay w-full p-3 border border-gray-300 rounded-lg text-sm h-12'; 
+          delayInp.dataset.field = 'Delay';
+          
+          delayRow.appendChild(delayLabel);
+          delayRow.appendChild(delayInp);
+          slot.appendChild(delayRow);
+          
+          // 6. Share Button (Aligned to the right)
+          const actionRow = document.createElement('div');
+          actionRow.className = 'flex justify-end';
+          const shareTextBtn = document.createElement('button');
+          shareTextBtn.type = 'button';
+          shareTextBtn.className = 'flex-shrink-0 px-3 py-1 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-600 transition duration-150 text-sm shadow-md';
+          shareTextBtn.textContent = 'Share';
+          shareTextBtn.addEventListener('click', ()=> exportSlotAsText(slot));
+          
+          actionRow.appendChild(shareTextBtn);
+          slot.appendChild(actionRow);
 
-      container.appendChild(slot);
+          container.appendChild(slot);
+        }
+    } catch (error) {
+        console.error("An error occurred during slot creation:", error);
     }
+
+    // IMPORTANT: Load data after slots are built
     loadFromStorage();
     renderTotals(); // update totals after slots built
+    console.log("Hourly slots build attempt finished.");
   }
 
   // Storage key per date
@@ -447,6 +473,7 @@
   }
 
   function loadFromStorage(){
+    console.log("Loading data from storage for date:", dateInput.value);
     const date = dateInput.value; if(!date) return;
     const key = storageKeyForDate(date);
     const raw = localStorage.getItem(key);
@@ -471,16 +498,27 @@
         s.querySelector('input.delay').value = row.Delay ?? '';
         s.querySelector('input.total').value = row.Total ?? '';
       });
-    }catch(e){console.error(e)}
+    }catch(e){console.error("Error parsing stored data:", e)}
     renderTotals();
   }
+  
+  function autoSaveData() {
+      const date = dateInput.value; 
+      if(!date) return; 
+      try{ 
+          localStorage.setItem(storageKeyForDate(date), JSON.stringify({startHour: START_HOUR, rows: gatherData(), savedAt: new Date().toISOString()})); 
+      }catch(e){console.error("Autosave failed:", e)}
+      renderTotals();
+  }
+
 
   function resetAll(){
-    if(!confirm('Delete ALL saved data from this browser? This cannot be undone.')) return;
+    // IMPORTANT: Using window.confirm() for now, but should be replaced with custom modal
+    if(!window.confirm('Delete ALL saved data from this browser? This cannot be undone.')) return;
     // remove keys that start with hourly-logger@
     Object.keys(localStorage).forEach(k=>{ if(k.startsWith('hourly-logger@')) localStorage.removeItem(k); });
     container.querySelectorAll('.hourly-slot-card').forEach(s=>s.querySelectorAll('input').forEach(i=>i.value=''));
-    alert('All data removed.');
+    window.alert('All data removed.');
     renderTotals();
   }
 
@@ -497,10 +535,16 @@
       const isDay = (DAY_START <= DAY_END) ? (hour >= DAY_START && hour <= DAY_END) : !(hour > DAY_END && hour < DAY_START);
       numericFieldsInTotal.forEach(f=>{
         const cls = f.toLowerCase();
-        const valStr = (s.querySelector('input.'+cls) && s.querySelector('input.'+cls).value) || '';
-        const n = parseFloat(valStr);
-        const num = isNaN(n) ? 0 : n;
-        if(isDay) totals.day[f] += num; else totals.night[f] += num;
+        // Defensive check: ensure the input element exists
+        const inputElement = s.querySelector('input.'+cls);
+        if (inputElement) {
+            const valStr = inputElement.value || '';
+            const n = parseFloat(valStr);
+            const num = isNaN(n) ? 0 : n;
+            if(isDay) totals.day[f] += num; else totals.night[f] += num;
+        } else {
+             console.warn(`Input element for field '${f}' not found in slot for hour ${hour}.`);
+        }
       });
     });
     // round to 2 decimals if needed
@@ -579,7 +623,7 @@
     const totals = computeTotals();
     const t = totals[kind];
     const dateStr = formatDate(dateInput.value || new Date().toISOString().slice(0,10));
-    const header = kind === 'day' ? 'Day Totals (07:00 - 19:00)' : 'Night Totals (19:00 - 07:00)';
+    const header = kind === 'day' ? 'Day Totals (07:00 - 18:59)' : 'Night Totals (19:00 - 06:59)';
     const lines = [
       `${dateStr}`,
       `*${header}*`,
@@ -614,26 +658,21 @@
   // Event wiring for Hourly Log
   document.getElementById('resetAllBtn').addEventListener('click', resetAll);
  
-  dateInput.addEventListener('change', loadFromStorage);
+  dateInput.addEventListener('change', autoSaveData); // Save/Load data when date changes
   document.getElementById('shareDayBtn').addEventListener('click', ()=> shareTotalsAsText('day'));
   document.getElementById('shareNightBtn').addEventListener('click', ()=> shareTotalsAsText('night'));
 
-  // Recalculate totals when any numeric input changes (event delegation)
+  // Recalculate totals and autosave when any numeric input changes (event delegation)
   container.addEventListener('input', (e)=>{
     if(e.target && (e.target.tagName === 'INPUT')){
       renderTotals();
+      // Trigger autosave when data is entered/changed
+      autoSaveData(); 
     }
   });
 
   // Small helper: auto-save every 90 seconds (non-blocking)
-  setInterval(()=>{
-      const date = dateInput.value; 
-      if(!date) return; 
-      try{ 
-          localStorage.setItem(storageKeyForDate(date), JSON.stringify({startHour: START_HOUR, rows: gatherData(), savedAt: new Date().toISOString()})); 
-      }catch(e){/*ignore*/}
-      renderTotals();
-  }, 90_000);
+  setInterval(autoSaveData, 90_000);
   
   // =========================================================================
   // PASS / GUIDE CHANGE LOGIC (from Pass & Guide Change Log v1.html)
@@ -649,7 +688,6 @@
   const guideChange = document.getElementById('guideChange');
   const standChange = document.getElementById('standChange');
   const guideTypeRow = document.getElementById('guideTypeRow');
-  const guideType = document.getElementById('guideType');
   const extra = document.getElementById('extra');
   const preview = document.getElementById('preview');
   const generateBtn = document.getElementById('generate');
@@ -662,10 +700,13 @@
   const hour = new Date().getHours();
   shift.value = (hour >= 8 && hour < 20) ? 'DAY' : 'NIGHT';
 
-  // Show/hide guide type input
+  // Show/hide guide type input block
   guideChange.addEventListener('change', () => {
     guideTypeRow.style.display = guideChange.checked ? 'flex' : 'none';
-    if(!guideChange.checked) guideType.value = '';
+    if(!guideChange.checked) {
+      // Uncheck all guide type checkboxes when main guide change is unchecked
+      guideTypeRow.querySelectorAll('.guide-type-checkbox').forEach(cb => cb.checked = false);
+    }
     updatePreviewGuide();
   });
 
@@ -680,8 +721,16 @@
     const pc = passChange.checked ? 'Yes' : 'No';
     const gc = guideChange.checked ? 'Yes' : 'No';
     const sc = standChange.checked ? 'Yes' : 'No';
-    const gt = fmtEmpty(guideType.value);
     const ex = fmtEmpty(extra.value);
+
+    // Collect selected guide types
+    let guideTypesSelected = [];
+    if(guideChange.checked) {
+      guideTypesSelected = Array.from(guideTypeRow.querySelectorAll('.guide-type-checkbox:checked'))
+                            .map(cb => cb.dataset.guideType);
+    }
+    const gtText = guideTypesSelected.length > 0 ? ` (${guideTypesSelected.join(', ')})` : '';
+
 
     // Use readable date if available
     let dateText = d;
@@ -699,7 +748,7 @@
 
     lines.push('\nChanges:');
     lines.push('- Pass Change: ' + pc);
-    lines.push('- Guide Change: ' + gc + (gc === 'Yes' && gt ? (' (Type: ' + gt + ')') : ''));
+    lines.push('- Guide Change: ' + gc + gtText);
     lines.push('- Stand Change: ' + sc);
 
     if(ex) lines.push('\nRemarks: ' + ex);
@@ -715,11 +764,12 @@
   copyBtn.addEventListener('click', async () => {
     const text = buildText();
     try{
+      // Use navigator.clipboard API
       await navigator.clipboard.writeText(text);
       document.getElementById('guide-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg-guide" class="fixed top-4 right-4 bg-coral-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard.</div>');
       setTimeout(() => document.getElementById('copy-msg-guide')?.remove(), 2000);
     }catch(e){
-      // fallback
+      // Fallback using document.execCommand('copy')
       const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
       document.getElementById('guide-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg-guide-fail" class="fixed top-4 right-4 bg-coral-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard (fallback).</div>');
       setTimeout(() => document.getElementById('copy-msg-guide-fail')?.remove(), 2000);
@@ -741,7 +791,10 @@
     passChange.checked=false; 
     guideChange.checked=false; 
     standChange.checked=false; 
-    guideType.value=''; 
+    
+    // Clear all guide type checkboxes
+    guideTypeRow.querySelectorAll('.guide-type-checkbox').forEach(cb => cb.checked = false);
+
     extra.value=''; 
     guideTypeRow.style.display='none'; 
     preview.textContent='Fill the form and click "Generate"';
@@ -750,7 +803,11 @@
   });
 
   // live preview for convenience
-  [size, dateIn, shift, billet, stand, guideType, extra].forEach(el=>el.addEventListener('input', updatePreviewGuide));
+  // Listen to all guide type checkboxes for changes
+  guideTypeRow.querySelectorAll('.guide-type-checkbox').forEach(cb => {
+      cb.addEventListener('change', updatePreviewGuide);
+  });
+  [size, dateIn, shift, billet, stand, extra].forEach(el=>el.addEventListener('input', updatePreviewGuide));
   [passChange, guideChange, standChange].forEach(cb=>cb.addEventListener('change', updatePreviewGuide));
 
 
@@ -796,14 +853,24 @@
   // INITIALIZATION
   // =========================================================================
   
-  // Initialize Hourly Log components
-  buildSlots();
+  function initApp() {
+    try {
+        // Initialize Hourly Log components
+        buildSlots();
 
-  // Initialize Pass/Guide Log components
-  updateStandOptions(); 
+        // Initialize Pass/Guide Log components
+        updateStandOptions(); 
 
-  // Set default view on load
-  switchView(defaultView);
+        // Set default view on load
+        switchView(defaultView);
+        console.log("App initialization complete.");
+    } catch (e) {
+        console.error("Critical error during application initialization:", e);
+    }
+  }
+
+  // Call the initialization function after all definitions
+  initApp();
 
 </script>
 </body>
