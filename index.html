@@ -410,22 +410,66 @@
 
           slot.appendChild(metricContainer);
 
-          // 5. Delay (Made Wider - now uses full width row and text-area styling for bigger look)
-          const delayRow = document.createElement('div');
-          delayRow.className = 'flex flex-col mb-3';
-          const delayLabel = document.createElement('label');
-          delayLabel.className = 'text-xs font-medium text-gray-700 block mb-1';
-          delayLabel.textContent = 'Delay / Reasons for Interruption (Mandatory)';
-          const delayInp = document.createElement('input'); // Keep as input for single line convenience
-          delayInp.type = 'text'; 
-          // Placeholder removed per user request
-          // Apply w-full and padding for a larger appearance
-          delayInp.className = 'delay w-full p-3 border border-gray-300 rounded-lg text-sm h-12'; 
-          delayInp.dataset.field = 'Delay';
-          
-          delayRow.appendChild(delayLabel);
-          delayRow.appendChild(delayInp);
-          slot.appendChild(delayRow);
+          // 5. Delay (Multiline with dynamic add)
+const delayRow = document.createElement('div');
+delayRow.className = 'flex flex-col mb-3';
+
+const delayLabel = document.createElement('label');
+delayLabel.className = 'text-xs font-medium text-gray-700 block mb-1';
+delayLabel.textContent = 'Delay / Reasons for Interruption (Mandatory)';
+
+const delayList = document.createElement('div');
+delayList.className = 'delay-list flex flex-col gap-2';
+
+const addDelayBtn = document.createElement('button');
+addDelayBtn.type = 'button';
+addDelayBtn.className = 'w-14 px-2 py-1 bg-teal-accent text-white text-xs rounded-md shadow hover:bg-teal-600';
+addDelayBtn.textContent = 'Add';
+
+// Create new delay input
+function addDelayField(value = '') {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex gap-2 items-center';
+
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.value = value;
+    inp.className = 'delay-item flex-grow p-2 border border-gray-300 rounded-lg text-sm';
+
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = '×';
+    removeBtn.className = 'px-2 py-1 bg-red-500 text-white rounded-md text-sm';
+    removeBtn.onclick = () => wrapper.remove();
+
+    wrapper.appendChild(inp);
+    wrapper.appendChild(removeBtn);
+    delayList.appendChild(wrapper);
+}
+
+// Add default first field
+addDelayField();
+
+// Add button action
+addDelayBtn.onclick = () => addDelayField();
+
+// INLINE LIGHT GREEN STYLE
+addDelayBtn.style.backgroundColor = '#A7F3D0';
+addDelayBtn.style.color = '#065F46';
+addDelayBtn.style.border = '1px solid #6EE7B7';
+addDelayBtn.style.borderRadius = '4px';
+addDelayBtn.style.padding = '2px 6px';
+addDelayBtn.style.fontSize = '10px';
+addDelayBtn.style.fontWeight = '600';
+addDelayBtn.style.width = '40px';
+addDelayBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+addDelayBtn.style.marginTop = '10px';
+
+delayRow.appendChild(delayLabel);
+delayRow.appendChild(delayList);
+delayRow.appendChild(addDelayBtn);
+slot.appendChild(delayRow);
+
+
           
           // 6. Share Button (Aligned to the right)
           const actionRow = document.createElement('div');
@@ -465,7 +509,12 @@
       const cobble = s.querySelector('input.cobble').value || '';
       const chop = s.querySelector('input.chop').value || '';
       const hotout = s.querySelector('input.hotout').value || '';
-      const delay = s.querySelector('input.delay').value || '';
+      const delayItems = [...s.querySelectorAll('.delay-item')]
+    .map(i => i.value.trim())
+    .filter(t => t.length > 0);
+
+const delay = delayItems;
+
       const total = s.querySelector('input.total').value || '';
       rows.push({TimeSlot:timeLabel, Discharged:discharged, Rolled:rolled, Cobble:cobble, Chop:chop, Hotout:hotout, Delay:delay, Total:total});
     });
@@ -580,7 +629,14 @@
     const cobble = slot.querySelector('input.cobble').value.trim() || '0';
     const chop = slot.querySelector('input.chop').value.trim() || '0';
     const hotout = slot.querySelector('input.hotout').value.trim() || '0';
-    const delay = slot.querySelector('input.delay').value.trim() || '-';
+    const delayItems = [...slot.querySelectorAll('.delay-item')]
+    .map(i => i.value.trim())
+    .filter(t => t.length > 0);
+
+const delay = delayItems.length
+    ? delayItems.map(d => `• ${d}`).join('\n')
+    : '-';
+
     const total = slot.querySelector('input.total').value.trim() || '0';
 
     const lines = [
@@ -591,7 +647,7 @@
       `Cobble: ${cobble}`,
       `Chop: ${chop}`,
       `Hotout: ${hotout}`,
-      `Delay: ${delay}`,
+      `Delay:\n${delay}`,
       `*Total: ${total}*`
     ];
     const text = lines.join('\n');
