@@ -1,885 +1,1007 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Rebar Mill Application Hub</title>
-  <!-- Load Inter Font from Google Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-  <!-- Load Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Load SheetJS for Excel export in Hourly Log -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  
-  <style>
-    /* Custom configuration and colors */
-    :root {
-      --main-blue: #07384A;
-      --teal-accent: #00A699;
-      --coral-accent: #FF5A5F;
-    }
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rebar Mill Application Hub</title>
+    <!-- Load Inter Font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load SheetJS for Excel export in Hourly Log -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-    /* Apply Inter font globally */
-    body {
-        font-family: 'Inter', sans-serif;
-    }
-
-    .bg-main-blue { background-color: var(--main-blue); }
-    .text-main-blue { color: var(--main-blue); }
-    .text-teal { color: var(--teal-accent); }
-    .bg-teal-btn { background-color: var(--teal-accent); }
-    .text-coral { color: var(--coral-accent); }
-    .bg-coral-btn { background-color: var(--coral-accent); }
+    <style>
+        /* Custom configuration and colors */
+        :root {
+          --main-blue: #07384A;
+          --teal-accent: #00A699;
+          --coral-accent: #FF5A5F;
+        }
     
-    /* General styles for the tabs */
-    .tab-btn.active {
-      border-color: var(--main-blue);
-      color: var(--main-blue);
-    }
-
-    /* Style for the Hourly Log's colorful title text */
-    .rebar-title-text {
-        font-size: 1.5rem;
-        font-weight: 800;
-        background: linear-gradient(90deg, #00A699, #484848); 
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text; 
-    }
+        /* Apply Inter font globally */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
     
-    /* Ensure the main content takes available height */
-    .main-content { min-height: calc(100vh - 80px); }
-
-    /* Hide specific elements from the original logs if they conflict with the unified UI */
-    .start-hidden { display: none !important; }
-
-    /* Pass/Guide Log form adjustments */
-    #guide-log-container .card {
-        max-width: 100%;
-        box-shadow: none;
-        padding: 0;
-        background: transparent;
-    }
-    #guide-log-container input, #guide-log-container select {
-        border-radius: 0.5rem;
-        padding: 0.6rem;
-    }
-
-    /* Hourly Log specific slot styling */
-    .hourly-slot-card {
-        background-color: #f8fafc; /* slate-50 */
-        border: 1px solid #e2e8f0; /* slate-200 */
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
+        .bg-main-blue { background-color: var(--main-blue); }
+        .text-main-blue { color: var(--main-blue); }
+        .text-teal { color: var(--teal-accent); }
+        .bg-teal-btn { background-color: var(--teal-accent); }
+        .text-coral { color: var(--coral-accent); }
+        .bg-coral-btn { background-color: var(--coral-accent); }
+        
+        /* General styles for the tabs */
+        .tab-btn.active {
+          border-color: var(--main-blue);
+          color: var(--main-blue);
+        }
     
-    /* Grid for the 24 slots */
-    .hourly-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-        gap: 1.5rem; /* gap-6 */
-    }
+        /* Style for the Hourly Log's colorful title text */
+        .rebar-title-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #00A699, #484848); 
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text; 
+        }
+        
+        /* Ensure the main content takes available height */
+        .main-content { min-height: calc(100vh - 80px); }
     
-    /* Scrollbar cleanup */
-    pre#preview {
-        max-height: 240px;
-    }
-  </style>
+        /* Hide specific elements from the original logs if they conflict with the unified UI */
+        .start-hidden { display: none !important; }
+    
+        /* Pass/Guide Log form adjustments */
+        #guide-log-container .card {
+            max-width: 100%;
+            box-shadow: none;
+            padding: 0;
+            background: transparent;
+        }
+        #guide-log-container input, #guide-log-container select {
+            border-radius: 0.5rem;
+            padding: 0.6rem;
+        }
+    
+        /* Hourly Log specific slot styling */
+        .hourly-slot-card {
+            background-color: #f8fafc; /* slate-50 */
+            border: 1px solid #e2e8f0; /* slate-200 */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        
+        /* Grid for the 24 slots */
+        .hourly-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem; /* gap-6 */
+        }
+        
+        /* Scrollbar cleanup */
+        pre#preview {
+            max-height: 240px;
+        }
+    </style>
 </head>
+
 <body class="bg-gray-50 text-gray-800">
 
-  <!-- Main App Container -->
-  <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+    <!-- Main App Container -->
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
 
-    <!-- Header & Tabs -->
-    <header class="mb-6 bg-white p-4 rounded-xl shadow-lg">
-      <h1 class="text-1xl text-main-blue mb-4">Rebar Mill Hub</h1>
+        <!-- Header & Tabs -->
+        <header class="mb-6 bg-white p-4 rounded-xl shadow-lg">
+            <h1 class="text-1xl text-main-blue mb-4">Rebar Mill Hub</h1>
 
-      <nav class="flex space-x-4 border-b border-gray-200" id="tabs">
-        <button data-view="hourly-log" class="tab-btn pb-2 px-3 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-main-blue transition duration-150 active:border-main-blue">
-          Hourly Production Log
-        </button>
-        <button data-view="guide-log" class="tab-btn pb-2 px-3 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-main-blue transition duration-150 active:border-main-blue">
-          Pass / Guide Change Log
-        </button>
-      </nav>
-    </header>
+            <nav class="flex space-x-4 border-b border-gray-200" id="tabs">
+                <button data-view="hourly-log" class="tab-btn pb-2 px-3 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-main-blue transition duration-150 active:border-main-blue">
+                    Hourly Production Log
+                </button>
+                <button data-view="guide-log" class="tab-btn pb-2 px-3 font-bold text-sm border-b-2 border-transparent text-gray-500 hover:text-main-blue transition duration-150 active:border-main-blue">
+                    Pass / Guide Change Log
+                </button>
+            </nav>
+        </header>
 
-    <main class="main-content">
-      
-      <!-- ----------------------------------------------------------- -->
-      <!-- Section 1: Hourly Production Log (Rebar Production Log v2.html) -->
-      <!-- ----------------------------------------------------------- -->
-      <div id="hourly-log-container" data-view-content class="p-4 bg-white rounded-xl shadow-lg">
-        
-        <h2 class="rebar-title-text mb-4 text-center">Hourly Mill Production Data Logger</h2>
+        <main class="main-content">
 
-        <div class="flex flex-wrap gap-4 items-center mb-4 p-3 bg-gray-100 rounded-lg">
-          <label class="text-sm font-semibold text-gray-600">Date</label>
-          <input id="entryDate" type="date" class="p-2 border border-gray-300 rounded-lg rounded-full" />
-          <!-- Updated Today button class for consistent height/padding -->
-          <button id="todayBtn" class="px-3 py-1 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150">Today</button>
-          <button id="resetAllBtn" class="bg-red-500 text-white px-3 py-1 font-semibold rounded-full hover:bg-red-600 transition duration-150 shadow-md">Reset</button>
-        
-          <div class="flex-grow"></div>
-          <!-- Start hour controls kept for JS compatibility but hidden -->
-          <label class="text-sm font-semibold text-gray-600 start-hidden">Start hour</label>
-          <select id="startHour" class="p-2 border border-gray-300 rounded-lg start-hidden"></select>
-        </div>
+            <!-- ----------------------------------------------------------- -->
+            <!-- Section 1: Hourly Production Log (Rebar Production Log v2.html) -->
+            <!-- ----------------------------------------------------------- -->
+            <div id="hourly-log-container" data-view-content class="p-4 bg-white rounded-xl shadow-lg">
 
-        <div class="flex flex-wrap gap-2 items-center mb-4">
-         </div>
+                <h2 class="rebar-title-text mb-4 text-center">Hourly Mill Production Data Logger</h2>
 
-        <!-- New totals cards for Day and Night -->
-        <div class="flex flex-wrap gap-4 mb-6" id="totalsRow" aria-live="polite">
-          <div class="totals-card-hourly flex-1 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-            <h3 class="text-lg font-semibold mb-2 text-main-blue">Day Totals (07:00 - 19:00)</h3>
-            <div class="grid grid-cols-2 gap-2 text-sm" id="dayTotalsGrid">
-              <!-- populated by JS -->
-            </div>
-            <div class="mt-3">
-              <button id="shareDayBtn" class="w-full px-3 py-1 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150">Share Day (Text)</button>
-            </div>
-          </div>
+                <div class="flex flex-wrap gap-4 items-center mb-4 p-3 bg-gray-100 rounded-lg">
+                    <label class="text-sm font-semibold text-gray-600">Date</label>
+                    <input id="entryDate" type="date" class="p-2 border border-gray-300 rounded-lg rounded-full" />
+                    <!-- Updated Today button class for consistent height/padding -->
+                    <button id="todayBtn" class="px-3 py-1 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150">Today</button>
+                    <button id="resetAllBtn" class="bg-red-500 text-white px-3 py-1 font-semibold rounded-full hover:bg-red-600 transition duration-150 shadow-md">Reset</button>
 
-          <div class="totals-card-hourly flex-1 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-            <h3 class="text-lg font-semibold mb-2 text-main-blue">Night Totals (19:00 - 07:00)</h3>
-            <div class="grid grid-cols-2 gap-2 text-sm" id="nightTotalsGrid">
-              <!-- populated by JS -->
-            </div>
-            <div class="mt-3">
-              <button id="shareNightBtn" class="w-full px-3 py-1 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150">Share Night (Text)</button>
-            </div>
-          </div>
-        </div>
-
-        <h3 class="text-xl font-bold mb-4 text-gray-700">Hourly Slots</h3>
-        <div id="slotsContainer" class="hourly-grid" aria-live="polite">
-          <!-- Slots populated by JS -->
-        </div>
-
-        <footer class="mt-6 text-sm text-gray-500 border-t pt-4">
-         This WEBAPP is a controlled application.
-        </footer>
-      </div>
-
-      <!-- ----------------------------------------------------------- -->
-      <!-- Section 2: Pass / Guide Change Log (Pass & Guide Change Log v1.html) -->
-      <!-- ----------------------------------------------------------- -->
-      <div id="guide-log-container" data-view-content class="hidden flex justify-center">
-        <div class="w-full max-w-xl bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-            
-            <h2 class="text-2xl font-bold mb-6 text-coral text-center">Pass / Guide Change Log</h2>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            
-              <div class="flex flex-col">
-                <label for="dia" class="text-sm font-medium mb-1 text-gray-700">Size</label>
-                <select id="dia" class="border border-gray-300 rounded-lg">
-                  <option value="">Select</option>
-                  <option value="10">10MM</option>
-                  <option value="12">12MM</option>
-                  <option value="16">16MM</option>
-                  <option value="20">20MM</option>
-                  <option value="25">25MM</option>
-                  <option value="32">32MM</option>
-                </select>
-              </div>
-            
-              <div class="flex flex-col">
-                <label for="date_guide" class="text-sm font-medium mb-1 text-gray-700">Date</label>
-                <!-- Renamed ID to avoid conflict with 'entryDate' in Hourly Log -->
-                <input id="date_guide" type="date" class="border border-gray-300 rounded-lg" />
-              </div>
-
-              <div class="flex flex-col">
-                <label for="shift_guide" class="text-sm font-medium mb-1 text-gray-700">Shift</label>
-                <!-- Renamed ID to avoid conflict with 'shift' (was not defined but good practice) -->
-                <select id="shift_guide" class="border border-gray-300 rounded-lg">
-                  <option value="">-- select shift --</option>
-                  <option>DAY</option>
-                  <option>NIGHT</option>
-                </select>
-              </div>
-
-              <div class="flex flex-col">
-                <label for="billet" class="text-sm font-medium mb-1 text-gray-700">Billet No.</label>
-                <input id="billet" type="text" maxlength="3" class="border border-gray-300 rounded-lg" 
-                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 3);" />
-              </div>
-
-              <div class="flex flex-col">
-                <label for="stand" class="text-sm font-medium mb-1 text-gray-700">Stand No.</label>
-                <select id="stand" class="border border-gray-300 rounded-lg">
-                  <option value="">-- select stand no --</option>
-                  <!-- Options populated by JS after size selection -->
-                  <option>A</option> <option>B</option>
-                  <option>1</option> <option>2</option> <option>3</option> <option>4</option> <option>5</option> <option>6</option> <option>7</option> <option>8</option> <option>9</option> <option>10</option> <option>11</option> <option>12</option> <option>13</option> <option>14</option> <option>15</option> <option>16</option> <option>17</option> <option>18</option>
-                </select>
-              </div>
-
-              <div class="flex flex-col col-span-1">
-                <label class="text-sm font-medium mb-1 text-gray-700">Changes</label>
-                <div class="flex flex-col gap-1">
-                  <label class="inline-flex items-center text-sm"><input id="passChange" type="checkbox" class="rounded text-main-blue mr-2" /> Pass Change</label>
-                  <label class="inline-flex items-center text-sm"><input id="guideChange" type="checkbox" class="rounded text-main-blue mr-2" /> Guide Change</label>
-                  <label class="inline-flex items-center text-sm"><input id="standChange" type="checkbox" class="rounded text-main-blue mr-2" /> Stand Change</label>
+                    <div class="flex-grow"></div>
+                    <!-- Start hour controls kept for JS compatibility but hidden -->
+                    <label class="text-sm font-semibold text-gray-600 start-hidden">Start hour</label>
+                    <select id="startHour" class="p-2 border border-gray-300 rounded-lg start-hidden"></select>
                 </div>
-              </div>
 
-              <!-- UPDATED: Replaced single select with multiple checkboxes for Guide Types -->
-              <div class="flex flex-col sm:col-span-2" id="guideTypeRow" style="display:none;">
-                <label class="text-sm font-medium mb-2 text-gray-700">Guide Types Changed</label>
-                <div class="grid grid-cols-2 gap-2 text-sm">
-                  <label class="inline-flex items-center">
-                    <input id="guideTypeEntry" type="checkbox" class="guide-type-checkbox rounded text-main-blue mr-2" data-guide-type="Entry" /> Entry
-                  </label>
-                  <label class="inline-flex items-center">
-                    <input id="guideTypeDelivery" type="checkbox" class="guide-type-checkbox rounded text-main-blue mr-2" data-guide-type="Delivery" /> Delivery
-                  </label>
-                  <label class="inline-flex items-center">
-                    <input id="guideTypeRepeaters" type="checkbox" class="guide-type-checkbox rounded text-main-blue mr-2" data-guide-type="Slitter" /> Slitter
-                  </label>
-                  <label class="inline-flex items-center">
-                    <input id="guideTypeExit" type="checkbox" class="guide-type-checkbox rounded text-main-blue mr-2" data-guide-type="Others" /> Others
-                  </label>
+                <div class="flex flex-wrap gap-2 items-center mb-4">
                 </div>
-              </div>
 
-              <div class="flex flex-col sm:col-span-2">
-                <label for="extra" class="text-sm font-medium mb-1 text-gray-700">Remarks (optional)</label>
-                <input id="extra" type="text" class="border border-gray-300 rounded-lg" />
-              </div>
+                <!-- New totals cards for Day and Night -->
+                <div class="flex flex-wrap gap-4 mb-6" id="totalsRow" aria-live="polite">
+                    <div class="totals-card-hourly flex-1 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="text-lg font-semibold mb-2 text-main-blue">Day Totals (07:00 - 19:00)</h3>
+                        <div class="grid grid-cols-2 gap-2 text-sm" id="dayTotalsGrid">
+                            <!-- populated by JS -->
+                        </div>
+                        <div class="mt-3">
+                            <button id="shareDayBtn" class="w-full px-3 py-1 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150">Share Day (Text)</button>
+                        </div>
+                    </div>
+
+                    <div class="totals-card-hourly flex-1 bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                        <h3 class="text-lg font-semibold mb-2 text-main-blue">Night Totals (19:00 - 07:00)</h3>
+                        <div class="grid grid-cols-2 gap-2 text-sm" id="nightTotalsGrid">
+                            <!-- populated by JS -->
+                        </div>
+                        <div class="mt-3">
+                            <button id="shareNightBtn" class="w-full px-3 py-1 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150">Share Night (Text)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-bold mb-4 text-gray-700">Hourly Slots</h3>
+                <div id="slotsContainer" class="hourly-grid" aria-live="polite">
+                    <!-- Slots populated by JS -->
+                </div>
+
+                <footer class="mt-6 text-sm text-gray-500 border-t pt-4">
+                    This WEBAPP is a controlled application.
+                </footer>
             </div>
 
-            <div class="mt-6">
-              <label for="preview" class="text-sm font-medium mb-1 text-gray-700">Formatted preview</label>
-              <pre id="preview" class="bg-gray-100 text-gray-700 p-4 rounded-lg overflow-auto text-sm">Fill the form and click "Generate"</pre>
+            <!-- ----------------------------------------------------------- -->
+            <!-- Section 2: Pass / Guide Change Log (Pass & Guide Change Log v1.html) -->
+            <!-- ----------------------------------------------------------- -->
+            <div id="guide-log-container" data-view-content class="hidden flex justify-center">
+                <div class="w-full bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+
+                    <h2 class="text-2xl font-bold mb-6 text-coral text-center">Pass / Guide Change Log</h2>
+
+                    <!-- FIXED DETAILS CARD -->
+                    <div class="bg-gray-50 p-4 rounded-xl border mb-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                            <div class="flex flex-col">
+                                <label class="text-sm font-medium mb-1 text-gray-700">Size</label>
+                                <select id="dia" class="border border-gray-300 rounded-lg p-2">
+                                    <option value="">Select</option>
+                                    <option value="10">10MM</option>
+                                    <option value="12">12MM</option>
+                                    <option value="16">16MM</option>
+                                    <option value="20">20MM</option>
+                                    <option value="25">25MM</option>
+                                    <option value="32">32MM</option>
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col">
+                                <label class="text-sm font-medium mb-1 text-gray-700">Date</label>
+                                <input id="date_guide" type="date" class="border border-gray-300 rounded-lg p-2" />
+                            </div>
+
+                            <div class="flex flex-col">
+                                <label class="text-sm font-medium mb-1 text-gray-700">Shift</label>
+                                <select id="shift_guide" class="border border-gray-300 rounded-lg p-2">
+                                    <option value="">-- select shift --</option>
+                                    <option>DAY</option>
+                                    <option>NIGHT</option>
+                                </select>
+                            </div>
+
+                            <div class="flex flex-col">
+                                <label class="text-sm font-medium mb-1 text-gray-700">Billet No.</label>
+                                <input id="billet" type="text" maxlength="3" class="border border-gray-300 rounded-lg p-2" oninput="this.value=this.value.replace(/[^0-9]/g,'').slice(0,3);" />
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- DYNAMIC JOB CARDS -->
+                    <div id="jobCardsContainer" class="flex flex-col gap-4"></div>
+
+                    <!-- ADD JOB BUTTON -->
+                    <div class="mt-4 flex justify-center">
+                        <button id="addJobBtn" class="px-4 py-2 bg-teal-600 text-white font-semibold rounded-lg shadow hover:bg-teal-700">
+                            + Add Job
+                        </button>
+                    </div>
+                   <div class="flex flex-col gap-3 mt-6">
+              <button id="generateBtn" class="bg-coral-btn text-white px-4 py-3 font-semibold rounded-lg hover:bg-red-600 transition duration-150 shadow-md">Generate</button>
+              <button id="copyBtn" class="bg-white text-coral border border-gray-300 px-4 py-3 font-semibold rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Copy text</button>
+              <button id="waBtn" class="bg-white text-teal border border-gray-300 px-4 py-3 font-semibold rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Share to WhatsApp</button>
+              <button id="clearBtn" class="bg-white text-gray-500 border border-gray-300 px-4 py-3 font-semibold rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Clear Form</button>
+            </div>
+                    <!-- PREVIEW AREA -->
+                    <div class="mt-4">
+                        <label class="block text-sm font-medium mb-2 text-gray-700">Preview:</label>
+                        <pre id="preview" class="w-full p-4 bg-gray-100 border border-gray-300 rounded-lg h-48 overflow-y-auto text-sm whitespace-pre-wrap"></pre>
+                    </div>
+
+
+                    <div class="mt-4 text-xs text-gray-500 text-center">This WEBAPP is a controlled application.</div>
+                </div>
             </div>
 
-            <div class="flex flex-col gap-3 mt-6">
-              <button id="generate" class="bg-coral-btn text-white px-4 py-3 font-semibold rounded-lg hover:bg-red-600 transition duration-150 shadow-md">Generate</button>
-              <button id="copy" class="bg-white text-coral border border-gray-300 px-4 py-3 font-semibold rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Copy text</button>
-              <button id="wa" class="bg-white text-teal border border-gray-300 px-4 py-3 font-semibold rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Share to WhatsApp</button>
-              <button id="clear" class="bg-white text-gray-500 border border-gray-300 px-4 py-3 font-semibold rounded-lg hover:bg-gray-50 transition duration-150 shadow-sm">Clear Form</button>
-            </div>
+        </main>
+    </div>
 
-            <div class="mt-4 text-xs text-gray-500 text-center">This WEBAPP is a controlled application.</div>
-        </div>
-      </div>
-
-    </main>
-  </div>
-
-<script>
-  // =========================================================================
-  // CORE APPLICATION HUB LOGIC
-  // =========================================================================
-  const tabsContainer = document.getElementById('tabs');
-  const viewContainers = document.querySelectorAll('[data-view-content]');
-  const defaultView = 'hourly-log';
-
-  function switchView(viewName) {
-    viewContainers.forEach(container => {
-      container.classList.add('hidden');
-      if (container.id === `${viewName}-container`) {
-        container.classList.remove('hidden');
-      }
-    });
-
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.classList.remove('active', 'border-main-blue', 'text-main-blue');
-      btn.classList.add('border-transparent', 'text-gray-500');
-      if (btn.dataset.view === viewName) {
-        btn.classList.add('active', 'border-main-blue', 'text-main-blue');
-        btn.classList.remove('border-transparent', 'text-gray-500');
-      }
-    });
-  }
-
-  tabsContainer.addEventListener('click', (e) => {
-    if (e.target.classList.contains('tab-btn')) {
-      switchView(e.target.dataset.view);
-    }
-  });
-
-  // =========================================================================
-  // HOURLY PRODUCTION LOGIC (from Rebar Production Log v2.html)
-  // =========================================================================
-
-  // Configuration
-  const TOTAL_SLOTS = 24; // hourly slots
-  const START_HOUR = 7; // fixed hidden start hour (07:00 - 08:00)
-  
-  // Elements
-  const startHourSelect = document.getElementById('startHour');
-  const dateInput = document.getElementById('entryDate');
-  const container = document.getElementById('slotsContainer');
-  const exportExcelBtn = document.getElementById('exportExcelBtn');
-
-
-  // Utilities
-  function pad(n){return (n<10?'0'+n:n)}
-  function formatSlot(hour){const end=(hour+1)%24; return pad(hour)+':00 - '+pad(end)+':00'}
-
-  // format date as DD-MMM-YYYY (e.g. 18-Nov-2025)
-  function formatDate(input){
-    if(!input) return '';
-    let y,m,d;
-    if(typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input)){
-      [y,m,d] = input.split('-');
-    }else if(input instanceof Date){
-      y = String(input.getFullYear());
-      m = pad(input.getMonth()+1);
-      d = pad(input.getDate());
-    }else{
-      const dt = new Date(input);
-      if(isNaN(dt)) return String(input);
-      y = String(dt.getFullYear()); m = pad(dt.getMonth()+1); d = pad(dt.getDate());
-    }
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return `${d}-${months[parseInt(m,10)-1]}-${y}`;
-  }
-
-  // Build startHour select (kept hidden for compatibility / debugging)
-  for(let h=0;h<24;h++){
-    const opt = document.createElement('option'); opt.value=h; opt.text = pad(h)+':00';
-    startHourSelect.appendChild(opt);
-  }
-  startHourSelect.value = START_HOUR;
-
-  // Date input default to today
-  function setToday(){ const d=new Date(); dateInput.value = d.toISOString().slice(0,10); }
-  setToday(); document.getElementById('todayBtn').onclick = setToday;
-
-  function buildSlots(){
-    console.log("Attempting to build hourly slots...");
-    if (!container) {
-        console.error("ERROR: The 'slotsContainer' element was not found in the DOM. Cannot build slots.");
-        return;
-    }
-    
-    container.innerHTML='';
-    const start = START_HOUR;
-    // Fields order: Discharged, Rolled, Cobble, Chop, Hotout, Total, Delay
-    const numericFields = ['Discharged','Rolled','Cobble','Chop']; // Core production metrics
-    
-    try {
-        for(let i=0;i<TOTAL_SLOTS;i++){
-          const hour = (start + i) % 24;
-          const slot = document.createElement('div'); 
-          // Adjusted padding/class for better look with new layout
-          slot.className='p-4 rounded-xl hourly-slot-card flex flex-col justify-between'; 
-          slot.dataset.slotIndex=i; slot.dataset.hour=hour;
-          
-          // 1. Time Header (Redesigned - now inside the card, but wide and prominent)
-          const timeHeader = document.createElement('div'); 
-          timeHeader.className='text-xl font-extrabold text-main-blue mb-3 border-b-2 border-teal-accent pb-1'; 
-          timeHeader.textContent = formatSlot(hour);
-          slot.appendChild(timeHeader);
-          
-          // Container for Production & Secondary Metrics (6 fields in 6 columns on large screens)
-          const metricContainer = document.createElement('div');
-          // Responsive grid for metrics: 2 cols on mobile, 3 on small, 6 on large
-          metricContainer.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3';
-          
-          // Helper function to create labeled input fields
-          const createLabeledInput = (f, isTotal = false) => {
-              const key = f.toLowerCase();
-              const label = document.createElement('label');
-              label.className = 'text-xs font-medium text-gray-700 block';
-              label.textContent = f;
-              const inp = document.createElement('input');
-              inp.type='number'; inp.step='any'; 
-              // Placeholder removed per user request
-              inp.className = `${key} w-full p-2 border border-gray-300 rounded-lg text-sm transition-colors duration-150 ${isTotal ? 'font-bold bg-yellow-100' : 'bg-white'}`; 
-              inp.dataset.field = f;
-              label.appendChild(inp);
-              return label;
-          };
-
-          // 2. Core Production Metrics (Discharged, Rolled, Cobble, Chop)
-          numericFields.forEach((f)=>{
-            metricContainer.appendChild(createLabeledInput(f));
+    <script>
+        function createJobCard() {
+            const card = document.createElement('div');
+            card.className = "bg-white p-4 rounded-xl border shadow job-card";
+        
+            card.innerHTML = `
+                <div class="flex justify-between mb-2">
+                    <h3 class="font-semibold text-main-blue">Job Entry</h3>
+                    <button class="removeJob bg-red-500 text-white px-2 py-1 rounded-lg text-sm">×</button>
+                </div>
+        
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        
+                    <div class="flex flex-col">
+                        <label class="text-sm font-medium mb-1 text-gray-700">Stand No.</label>
+                        <select class="standSel border border-gray-300 rounded-lg p-2">
+                            <option value="">-- select --</option>
+                            <option>A</option><option>B</option>
+                            <option>1</option><option>2</option><option>3</option><option>4</option>
+                            <option>5</option><option>6</option><option>7</option><option>8</option>
+                            <option>9</option><option>10</option><option>11</option><option>12</option>
+                            <option>13</option><option>14</option><option>15</option><option>16</option>
+                            <option>17</option><option>18</option>
+                        </select>
+                    </div>
+        
+                    <div class="flex flex-col">
+                        <label class="text-sm mb-1 font-medium text-gray-700">Changes</label>
+                        <div class="flex flex-col gap-1 text-sm">
+                            <label><input type="checkbox" class="pc mr-2"> Pass Change</label>
+                            <label><input type="checkbox" class="gc mr-2"> Guide Change</label>
+                            <label><input type="checkbox" class="sc mr-2"> Stand Change</label>
+                        </div>
+                    </div>
+        
+                    <div class="flex flex-col guideTypeBlock col-span-1 sm:col-span-2 hidden">
+                        <label class="text-sm font-medium mb-1 text-gray-700">Guide Types</label>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <label><input class="gt" data-type="Entry" type="checkbox"> Entry</label>
+                            <label><input class="gt" data-type="Delivery" type="checkbox"> Delivery</label>
+                            <label><input class="gt" data-type="Slitter" type="checkbox"> Slitter</label>
+                            <label><input class="gt" data-type="Others" type="checkbox"> Others</label>
+                        </div>
+                    </div>
+        
+                    <div class="flex flex-col sm:col-span-2">
+                        <label class="text-sm font-medium mb-1 text-gray-700">Remarks</label>
+                        <input type="text" class="remarks border border-gray-300 rounded-lg p-2">
+                    </div>
+                </div>
+            `;
+        
+            // Logic: show guide types when guideChange checked
+            card.querySelector(".gc").addEventListener("change", (e) => {
+                card.querySelector(".guideTypeBlock").classList.toggle("hidden", !e.target.checked);
+            });
+        
+            // Delete job card
+            card.querySelector(".removeJob").addEventListener("click", () => {
+                card.remove();
+                updatePreviewGuide();
+            });
+        
+            return card;
+        }
+        
+        document.getElementById("addJobBtn").addEventListener("click", () => {
+            const card = createJobCard();
+            document.getElementById("jobCardsContainer").appendChild(card);
+            updatePreviewGuide();
+        });
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+          // =========================================================================
+          // CORE APPLICATION HUB LOGIC
+          // =========================================================================
+          const tabsContainer = document.getElementById('tabs');
+          const viewContainers = document.querySelectorAll('[data-view-content]');
+          const defaultView = 'hourly-log';
+        
+          function switchView(viewName) {
+            viewContainers.forEach(container => {
+              container.classList.add('hidden');
+              if (container.id === `${viewName}-container`) {
+                container.classList.remove('hidden');
+              }
+            });
+        
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+              btn.classList.remove('active', 'border-main-blue', 'text-main-blue');
+              btn.classList.add('border-transparent', 'text-gray-500');
+              if (btn.dataset.view === viewName) {
+                btn.classList.add('active', 'border-main-blue', 'text-main-blue');
+                btn.classList.remove('border-transparent', 'text-gray-500');
+              }
+            });
+          }
+        
+          tabsContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('tab-btn')) {
+              switchView(e.target.dataset.view);
+            }
           });
-
-          // 3. Hotout
-          metricContainer.appendChild(createLabeledInput('Hotout'));
+        
+          // =========================================================================
+          // HOURLY PRODUCTION LOGIC (from Rebar Production Log v2.html)
+          // =========================================================================
+        
+          // Configuration
+          const TOTAL_SLOTS = 24; // hourly slots
+          const START_HOUR = 7; // fixed hidden start hour (07:00 - 08:00)
           
-          // 4. Total (Placed next to Hotout)
-          metricContainer.appendChild(createLabeledInput('Total', true));
+          // Elements
+          const startHourSelect = document.getElementById('startHour');
+          const dateInput = document.getElementById('entryDate');
+          const container = document.getElementById('slotsContainer');
+          const exportExcelBtn = document.getElementById('exportExcelBtn');
+        
+        
+          // Utilities
+          function pad(n){return (n<10?'0'+n:n)}
+          function formatSlot(hour){const end=(hour+1)%24; return pad(hour)+':00 - '+pad(end)+':00'}
+        
+          // format date as DD-MMM-YYYY (e.g. 18-Nov-2025)
+          function formatDate(input){
+            if(!input) return '';
+            let y,m,d;
+            if(typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input)){
+              [y,m,d] = input.split('-');
+            }else if(input instanceof Date){
+              y = String(input.getFullYear());
+              m = pad(input.getMonth()+1);
+              d = pad(input.getDate());
+            }else{
+              const dt = new Date(input);
+              if(isNaN(dt)) return String(input);
+              y = String(dt.getFullYear()); m = pad(dt.getMonth()+1); d = pad(dt.getDate());
+            }
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            return `${d}-${months[parseInt(m,10)-1]}-${y}`;
+          }
+        
+          // Build startHour select (kept hidden for compatibility / debugging)
+          for(let h=0;h<24;h++){
+            const opt = document.createElement('option'); opt.value=h; opt.text = pad(h)+':00';
+            startHourSelect.appendChild(opt);
+          }
+          startHourSelect.value = START_HOUR;
+        
+          // Date input default to today
+          function setToday(){ const d=new Date(); dateInput.value = d.toISOString().slice(0,10); }
+          setToday(); document.getElementById('todayBtn').onclick = setToday;
+        
+          function buildSlots(){
+            console.log("Attempting to build hourly slots...");
+            if (!container) {
+                console.error("ERROR: The 'slotsContainer' element was not found in the DOM. Cannot build slots.");
+                return;
+            }
+            
+            container.innerHTML='';
+            const start = START_HOUR;
+            // Fields order: Discharged, Rolled, Cobble, Chop, Hotout, Total, Delay
+            const numericFields = ['Discharged','Rolled','Cobble','Chop']; // Core production metrics
+            
+            try {
+                for(let i=0;i<TOTAL_SLOTS;i++){
+                  const hour = (start + i) % 24;
+                  const slot = document.createElement('div'); 
+                  // Adjusted padding/class for better look with new layout
+                  slot.className='p-4 rounded-xl hourly-slot-card flex flex-col justify-between'; 
+                  slot.dataset.slotIndex=i; slot.dataset.hour=hour;
+                  
+                  // 1. Time Header (Redesigned - now inside the card, but wide and prominent)
+                  const timeHeader = document.createElement('div'); 
+                  timeHeader.className='text-xl font-extrabold text-main-blue mb-3 border-b-2 border-teal-accent pb-1'; 
+                  timeHeader.textContent = formatSlot(hour);
+                  slot.appendChild(timeHeader);
+                  
+                  // Container for Production & Secondary Metrics (6 fields in 6 columns on large screens)
+                  const metricContainer = document.createElement('div');
+                  // Responsive grid for metrics: 2 cols on mobile, 3 on small, 6 on large
+                  metricContainer.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3';
+                  
+                  // Helper function to create labeled input fields
+                  const createLabeledInput = (f, isTotal = false) => {
+                      const key = f.toLowerCase();
+                      const label = document.createElement('label');
+                      label.className = 'text-xs font-medium text-gray-700 block';
+                      label.textContent = f;
+                      const inp = document.createElement('input');
+                      inp.type='number'; inp.step='any'; 
+                      
+                      inp.className = `${key} w-full p-2 border border-gray-300 rounded-lg text-sm transition-colors duration-150 ${isTotal ? 'font-bold bg-yellow-100' : 'bg-white'}`; 
+                      inp.dataset.field = f;
+                      label.appendChild(inp);
+                      return label;
+                  };
+        
+                  // 2. Core Production Metrics (Discharged, Rolled, Cobble, Chop)
+                  numericFields.forEach((f)=>{
+                    metricContainer.appendChild(createLabeledInput(f));
+                  });
+        
+                  // 3. Hotout
+                  metricContainer.appendChild(createLabeledInput('Hotout'));
+                  
+                  // 4. Total (Placed next to Hotout)
+                  metricContainer.appendChild(createLabeledInput('Total', true));
+        
+                  slot.appendChild(metricContainer);
+        
+                  // 5. Delay (Multiline with dynamic add)
+        const delayRow = document.createElement('div');
+        delayRow.className = 'flex flex-col mb-3';
+        
+        const delayLabel = document.createElement('label');
+        delayLabel.className = 'text-xs font-medium text-gray-700 block mb-1';
+        delayLabel.textContent = 'Delay / Reasons for Interruption (Mandatory)';
+        
+        const delayList = document.createElement('div');
+        delayList.className = 'delay-list flex flex-col gap-2';
+        
+        const addDelayBtn = document.createElement('button');
+        addDelayBtn.type = 'button';
+        addDelayBtn.className = 'w-14 px-2 py-1 bg-teal-accent text-white text-xs rounded-md shadow hover:bg-teal-600';
+        addDelayBtn.textContent = 'Add';
+        
+        // Create new delay input
+        function addDelayField(value = '') {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex gap-2 items-center';
+        
+            const inp = document.createElement('input');
+            inp.type = 'text';
+            inp.value = value;
+            inp.className = 'delay-item flex-grow p-2 border border-gray-300 rounded-lg text-sm';
+        
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = '×';
+            removeBtn.className = 'px-2 py-1 bg-red-500 text-white rounded-md text-sm';
+            removeBtn.onclick = () => wrapper.remove();
+        
+            wrapper.appendChild(inp);
+            wrapper.appendChild(removeBtn);
+            delayList.appendChild(wrapper);
+        }
+        
+        // Add default first field
+        addDelayField();
+        
+        // Add button action
+        addDelayBtn.onclick = () => addDelayField();
+        
+        // INLINE LIGHT GREEN STYLE
+        addDelayBtn.style.backgroundColor = '#A7F3D0';
+        addDelayBtn.style.color = '#065F46';
+        addDelayBtn.style.border = '1px solid #6EE7B7';
+        addDelayBtn.style.borderRadius = '4px';
+        addDelayBtn.style.padding = '2px 6px';
+        addDelayBtn.style.fontSize = '10px';
+        addDelayBtn.style.fontWeight = '600';
+        addDelayBtn.style.width = '40px';
+        addDelayBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
+        addDelayBtn.style.marginTop = '10px';
+        
+        delayRow.appendChild(delayLabel);
+        delayRow.appendChild(delayList);
+        delayRow.appendChild(addDelayBtn);
+        slot.appendChild(delayRow);
+        
+        
+                  
+                  // 6. Share Button (Aligned to the right)
+                  const actionRow = document.createElement('div');
+                  actionRow.className = 'flex justify-end';
+                  const shareTextBtn = document.createElement('button');
+                  shareTextBtn.type = 'button';
+                  shareTextBtn.className = 'flex-shrink-0 px-3 py-1 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-600 transition duration-150 text-sm shadow-md';
+                  shareTextBtn.textContent = 'Share';
+                  shareTextBtn.addEventListener('click', ()=> exportSlotAsText(slot));
+                  
+                  actionRow.appendChild(shareTextBtn);
+                  slot.appendChild(actionRow);
+        
+                  container.appendChild(slot);
+                }
+            } catch (error) {
+                console.error("An error occurred during slot creation:", error);
+            }
+        
+            // IMPORTANT: Load data after slots are built
+            loadFromStorage();
+            renderTotals(); // update totals after slots built
+            console.log("Hourly slots build attempt finished.");
+          }
+        
+          // Storage key per date
+          function storageKeyForDate(dateStr){ return 'hourly-logger@'+dateStr; }
+        
+          function gatherData(){
+            const rows=[];
+            const slots = container.querySelectorAll('.hourly-slot-card');
+            slots.forEach(s=>{
+              const hour = parseInt(s.dataset.hour,10);
+              const timeLabel = formatSlot(hour);
+              const discharged = s.querySelector('input.discharged').value || '';
+              const rolled = s.querySelector('input.rolled').value || '';
+              const cobble = s.querySelector('input.cobble').value || '';
+              const chop = s.querySelector('input.chop').value || '';
+              const hotout = s.querySelector('input.hotout').value || '';
+              const delayItems = [...s.querySelectorAll('.delay-item')]
+            .map(i => i.value.trim())
+            .filter(t => t.length > 0);
+        
+        const delay = delayItems;
+        
+              const total = s.querySelector('input.total').value || '';
+              rows.push({TimeSlot:timeLabel, Discharged:discharged, Rolled:rolled, Cobble:cobble, Chop:chop, Hotout:hotout, Delay:delay, Total:total});
+            });
+            return rows;
+          }
+        
+          function loadFromStorage(){
+            console.log("Loading data from storage for date:", dateInput.value);
+            const date = dateInput.value; if(!date) return;
+            const key = storageKeyForDate(date);
+            const raw = localStorage.getItem(key);
+            if(!raw) {
+              // reset fields and totals
+              container.querySelectorAll('.hourly-slot-card').forEach(s=>s.querySelectorAll('input').forEach(i=>i.value=''));
+              renderTotals();
+              return;
+            }
+            try{
+              const parsed = JSON.parse(raw);
+              const rows = parsed.rows || [];
+              const slots = container.querySelectorAll('.hourly-slot-card');
+              slots.forEach((s,i)=>{
+                const row = rows[i] || {};
+                // The structure must be flexible enough to handle old/new data models
+                s.querySelector('input.discharged').value = row.Discharged ?? '';
+                s.querySelector('input.rolled').value = row.Rolled ?? '';
+                s.querySelector('input.cobble').value = row.Cobble ?? '';
+                s.querySelector('input.chop').value = row.Chop ?? '';
+                s.querySelector('input.hotout').value = row.Hotout ?? '';
+                s.querySelector('input.delay').value = row.Delay ?? '';
+                s.querySelector('input.total').value = row.Total ?? '';
+              });
+            }catch(e){console.error("Error parsing stored data:", e)}
+            renderTotals();
+          }
+          
+          function autoSaveData() {
+              const date = dateInput.value; 
+              if(!date) return; 
+              try{ 
+                  localStorage.setItem(storageKeyForDate(date), JSON.stringify({startHour: START_HOUR, rows: gatherData(), savedAt: new Date().toISOString()})); 
+              }catch(e){console.error("Autosave failed:", e)}
+              renderTotals();
+          }
+        
+        
+          function resetAll(){
+            // IMPORTANT: Using window.confirm() for now, but should be replaced with custom modal
+            if(!window.confirm('Delete ALL saved data from this browser? This cannot be undone.')) return;
+            // remove keys that start with hourly-logger@
+            Object.keys(localStorage).forEach(k=>{ if(k.startsWith('hourly-logger@')) localStorage.removeItem(k); });
+            container.querySelectorAll('.hourly-slot-card').forEach(s=>s.querySelectorAll('input').forEach(i=>i.value=''));
+            window.alert('All data removed.');
+            renderTotals();
+          }
+        
+          // Compute totals for day and night
+          const numericFieldsInTotal = ['Discharged','Rolled','Cobble','Chop','Hotout','Total'];
+          // Day defined 07..18 inclusive, Night otherwise
+          const DAY_START = 7, DAY_END = 18;
+        
+          function computeTotals(){
+            const totals = {day:{}, night:{}};
+            numericFieldsInTotal.forEach(f=>{ totals.day[f]=0; totals.night[f]=0; });
+            container.querySelectorAll('.hourly-slot-card').forEach(s=>{
+              const hour = parseInt(s.dataset.hour,10);
+              const isDay = (DAY_START <= DAY_END) ? (hour >= DAY_START && hour <= DAY_END) : !(hour > DAY_END && hour < DAY_START);
+              numericFieldsInTotal.forEach(f=>{
+                const cls = f.toLowerCase();
+                // Defensive check: ensure the input element exists
+                const inputElement = s.querySelector('input.'+cls);
+                if (inputElement) {
+                    const valStr = inputElement.value || '';
+                    const n = parseFloat(valStr);
+                    const num = isNaN(n) ? 0 : n;
+                    if(isDay) totals.day[f] += num; else totals.night[f] += num;
+                } else {
+                     console.warn(`Input element for field '${f}' not found in slot for hour ${hour}.`);
+                }
+              });
+            });
+            // round to 2 decimals if needed
+            numericFieldsInTotal.forEach(f=>{
+              totals.day[f] = Math.round((totals.day[f] + Number.EPSILON)*100)/100;
+              totals.night[f] = Math.round((totals.night[f] + Number.EPSILON)*100)/100;
+            });
+            return totals;
+          }
+        
+          function renderTotals(){
+            const t = computeTotals();
+            const dayGrid = document.getElementById('dayTotalsGrid');
+            const nightGrid = document.getElementById('nightTotalsGrid');
+            dayGrid.innerHTML = '';
+            nightGrid.innerHTML = '';
+            // show fields in two-column layout: label | value
+            numericFieldsInTotal.forEach(f=>{
+              dayGrid.innerHTML += `<div class="font-medium">${f}:</div><div class="text-right text-gray-600">${t.day[f]}</div>`;
+              nightGrid.innerHTML += `<div class="font-medium">${f}:</div><div class="text-right text-gray-600">${t.night[f]}</div>`;
+            });
+          }
+        
+          
+        
+          // Export a single slot as plain text and open native share or WhatsApp fallback
+          async function exportSlotAsText(slot){
+            const dateStr = formatDate(dateInput.value || new Date().toISOString().slice(0,10));
+            const hour = parseInt(slot.dataset.hour,10);
+            const timeLabel = formatSlot(hour);
+            const discharged = slot.querySelector('input.discharged').value.trim() || '0';
+            const rolled = slot.querySelector('input.rolled').value.trim() || '0';
+            const cobble = slot.querySelector('input.cobble').value.trim() || '0';
+            const chop = slot.querySelector('input.chop').value.trim() || '0';
+            const hotout = slot.querySelector('input.hotout').value.trim() || '0';
+            const delayItems = [...slot.querySelectorAll('.delay-item')]
+            .map(i => i.value.trim())
+            .filter(t => t.length > 0);
+        
+        const delay = delayItems.length
+            ? delayItems.map(d => `• ${d}`).join('\n')
+            : '-';
+        
+            const total = slot.querySelector('input.total').value.trim() || '0';
+        
+            const lines = [
+              `${dateStr}`,
+              `*${timeLabel}*`,
+              `Discharged: ${discharged}`,
+              `Rolled: ${rolled}`,
+              `Cobble: ${cobble}`,
+              `Chop: ${chop}`,
+              `Hotout: ${hotout}`,
+              `Delay:\n${delay}`,
+              `*Total: ${total}*`
+            ];
+            const text = lines.join('\n');
+        
+            // Try Web Share API
+            if(navigator.share){
+              try{
+                await navigator.share({ title: `Hourly ${dateStr} ${timeLabel}`, text });
+                return;
+              }catch(e){}
+            }
+        
+            // Fallback: copy to clipboard then open WhatsApp web
+            try{
+              if(navigator.clipboard && navigator.clipboard.writeText){
+                await navigator.clipboard.writeText(text);
+                // Note: Using a custom modal instead of alert()
+                document.getElementById('hourly-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg" class="fixed top-4 right-4 bg-teal-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard.</div>');
+                setTimeout(() => document.getElementById('copy-msg')?.remove(), 2000);
+              }
+            }catch(e){ /* ignore clipboard errors */ }
+        
+            const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+            window.open(waUrl, '_blank');
+          }
+        
+          // Share totals as text (day or night)
+          async function shareTotalsAsText(kind){ // kind = 'day' | 'night'
+            const totals = computeTotals();
+            const t = totals[kind];
+            const dateStr = formatDate(dateInput.value || new Date().toISOString().slice(0,10));
+            const header = kind === 'day' ? 'Day Totals (07:00 - 18:59)' : 'Night Totals (19:00 - 06:59)';
+            const lines = [
+              `${dateStr}`,
+              `*${header}*`,
+              `Discharged: ${t.Discharged}`,
+              `Rolled: ${t.Rolled}`,
+              `Cobble: ${t.Cobble}`,
+              `Chop: ${t.Chop}`,
+              `Hotout: ${t.Hotout}`,
+              `*Total: ${t.Total}*`
+            ];
+            const text = lines.join('\n');
+        
+            if(navigator.share){
+              try{
+                await navigator.share({ title: `${header} ${dateStr}`, text });
+                return;
+              }catch(e){}
+            }
+        
+            try{ 
+                if(navigator.clipboard && navigator.clipboard.writeText) {
+                    await navigator.clipboard.writeText(text); 
+                    // Note: Using a custom modal instead of alert()
+                    document.getElementById('hourly-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg-totals" class="fixed top-4 right-4 bg-teal-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard.</div>');
+                    setTimeout(() => document.getElementById('copy-msg-totals')?.remove(), 2000);
+                }
+            }catch(e){}
+            const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+            window.open(waUrl, '_blank');
+          }
+        
+          // Event wiring for Hourly Log
+          document.getElementById('resetAllBtn').addEventListener('click', resetAll);
+         
+          dateInput.addEventListener('change', autoSaveData); // Save/Load data when date changes
+          document.getElementById('shareDayBtn').addEventListener('click', ()=> shareTotalsAsText('day'));
+          document.getElementById('shareNightBtn').addEventListener('click', ()=> shareTotalsAsText('night'));
+        
+          // Recalculate totals and autosave when any numeric input changes (event delegation)
+          container.addEventListener('input', (e)=>{
+            if(e.target && (e.target.tagName === 'INPUT')){
+              renderTotals();
+              // Trigger autosave when data is entered/changed
+              autoSaveData(); 
+            }
+          });
+        
+          // Small helper: auto-save every 90 seconds (non-blocking)
+          setInterval(autoSaveData, 90_000);
+          
+         // =========================================================================
+// PASS / GUIDE CHANGE LOGIC
+// =========================================================================
 
-          slot.appendChild(metricContainer);
+// ======= DOM ELEMENTS =======
+// Make sure your HTML has these IDs
+const size = document.getElementById('dia');
+const dateIn = document.getElementById('date_guide'); 
+const shift = document.getElementById('shift_guide'); 
+const billet = document.getElementById('billet');
+const stand = document.getElementById('stand'); // dropdown
+const extra = document.getElementById('extra'); // any extra input
 
-          // 5. Delay (Multiline with dynamic add)
-const delayRow = document.createElement('div');
-delayRow.className = 'flex flex-col mb-3';
+const guideChange = document.getElementById('guideChange'); // checkbox
+const guideTypeRow = document.getElementById('guideTypeRow'); // container div for guide type checkboxes
+const passChange = document.getElementById('passChange'); // checkbox
+const standChange = document.getElementById('standChange'); // checkbox
 
-const delayLabel = document.createElement('label');
-delayLabel.className = 'text-xs font-medium text-gray-700 block mb-1';
-delayLabel.textContent = 'Delay / Reasons for Interruption (Mandatory)';
+const preview = document.getElementById('preview'); // preview container
+const generateBtn = document.getElementById('generateBtn'); // button
+const copyBtn = document.getElementById('copyBtn'); // button
+const waBtn = document.getElementById('waBtn'); // button
+const clearBtn = document.getElementById('clearBtn'); // button
 
-const delayList = document.createElement('div');
-delayList.className = 'delay-list flex flex-col gap-2';
-
-const addDelayBtn = document.createElement('button');
-addDelayBtn.type = 'button';
-addDelayBtn.className = 'w-14 px-2 py-1 bg-teal-accent text-white text-xs rounded-md shadow hover:bg-teal-600';
-addDelayBtn.textContent = 'Add';
-
-// Create new delay input
-function addDelayField(value = '') {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'flex gap-2 items-center';
-
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = value;
-    inp.className = 'delay-item flex-grow p-2 border border-gray-300 rounded-lg text-sm';
-
-    const removeBtn = document.createElement('button');
-    removeBtn.textContent = '×';
-    removeBtn.className = 'px-2 py-1 bg-red-500 text-white rounded-md text-sm';
-    removeBtn.onclick = () => wrapper.remove();
-
-    wrapper.appendChild(inp);
-    wrapper.appendChild(removeBtn);
-    delayList.appendChild(wrapper);
+// ======= INITIAL FORM SETUP =======
+if(dateIn) dateIn.value = new Date().toISOString().split('T')[0];
+if(shift) {
+    const hour = new Date().getHours();
+    shift.value = (hour >= 8 && hour < 20) ? 'DAY' : 'NIGHT';
 }
 
-// Add default first field
-addDelayField();
-
-// Add button action
-addDelayBtn.onclick = () => addDelayField();
-
-// INLINE LIGHT GREEN STYLE
-addDelayBtn.style.backgroundColor = '#A7F3D0';
-addDelayBtn.style.color = '#065F46';
-addDelayBtn.style.border = '1px solid #6EE7B7';
-addDelayBtn.style.borderRadius = '4px';
-addDelayBtn.style.padding = '2px 6px';
-addDelayBtn.style.fontSize = '10px';
-addDelayBtn.style.fontWeight = '600';
-addDelayBtn.style.width = '40px';
-addDelayBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.1)';
-addDelayBtn.style.marginTop = '10px';
-
-delayRow.appendChild(delayLabel);
-delayRow.appendChild(delayList);
-delayRow.appendChild(addDelayBtn);
-slot.appendChild(delayRow);
-
-
-          
-          // 6. Share Button (Aligned to the right)
-          const actionRow = document.createElement('div');
-          actionRow.className = 'flex justify-end';
-          const shareTextBtn = document.createElement('button');
-          shareTextBtn.type = 'button';
-          shareTextBtn.className = 'flex-shrink-0 px-3 py-1 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-600 transition duration-150 text-sm shadow-md';
-          shareTextBtn.textContent = 'Share';
-          shareTextBtn.addEventListener('click', ()=> exportSlotAsText(slot));
-          
-          actionRow.appendChild(shareTextBtn);
-          slot.appendChild(actionRow);
-
-          container.appendChild(slot);
+// ======= GUIDE CHANGE TOGGLE =======
+if(guideChange && guideTypeRow) {
+    guideChange.addEventListener('change', () => {
+        guideTypeRow.style.display = guideChange.checked ? 'flex' : 'none';
+        if(!guideChange.checked) {
+            guideTypeRow.querySelectorAll('.guide-type-checkbox').forEach(cb => cb.checked = false);
         }
-    } catch (error) {
-        console.error("An error occurred during slot creation:", error);
-    }
-
-    // IMPORTANT: Load data after slots are built
-    loadFromStorage();
-    renderTotals(); // update totals after slots built
-    console.log("Hourly slots build attempt finished.");
-  }
-
-  // Storage key per date
-  function storageKeyForDate(dateStr){ return 'hourly-logger@'+dateStr; }
-
-  function gatherData(){
-    const rows=[];
-    const slots = container.querySelectorAll('.hourly-slot-card');
-    slots.forEach(s=>{
-      const hour = parseInt(s.dataset.hour,10);
-      const timeLabel = formatSlot(hour);
-      const discharged = s.querySelector('input.discharged').value || '';
-      const rolled = s.querySelector('input.rolled').value || '';
-      const cobble = s.querySelector('input.cobble').value || '';
-      const chop = s.querySelector('input.chop').value || '';
-      const hotout = s.querySelector('input.hotout').value || '';
-      const delayItems = [...s.querySelectorAll('.delay-item')]
-    .map(i => i.value.trim())
-    .filter(t => t.length > 0);
-
-const delay = delayItems;
-
-      const total = s.querySelector('input.total').value || '';
-      rows.push({TimeSlot:timeLabel, Discharged:discharged, Rolled:rolled, Cobble:cobble, Chop:chop, Hotout:hotout, Delay:delay, Total:total});
+        updatePreviewGuide();
     });
-    return rows;
-  }
+}
 
-  function loadFromStorage(){
-    console.log("Loading data from storage for date:", dateInput.value);
-    const date = dateInput.value; if(!date) return;
-    const key = storageKeyForDate(date);
-    const raw = localStorage.getItem(key);
-    if(!raw) {
-      // reset fields and totals
-      container.querySelectorAll('.hourly-slot-card').forEach(s=>s.querySelectorAll('input').forEach(i=>i.value=''));
-      renderTotals();
-      return;
-    }
-    try{
-      const parsed = JSON.parse(raw);
-      const rows = parsed.rows || [];
-      const slots = container.querySelectorAll('.hourly-slot-card');
-      slots.forEach((s,i)=>{
-        const row = rows[i] || {};
-        // The structure must be flexible enough to handle old/new data models
-        s.querySelector('input.discharged').value = row.Discharged ?? '';
-        s.querySelector('input.rolled').value = row.Rolled ?? '';
-        s.querySelector('input.cobble').value = row.Cobble ?? '';
-        s.querySelector('input.chop').value = row.Chop ?? '';
-        s.querySelector('input.hotout').value = row.Hotout ?? '';
-        s.querySelector('input.delay').value = row.Delay ?? '';
-        s.querySelector('input.total').value = row.Total ?? '';
-      });
-    }catch(e){console.error("Error parsing stored data:", e)}
-    renderTotals();
-  }
-  
-  function autoSaveData() {
-      const date = dateInput.value; 
-      if(!date) return; 
-      try{ 
-          localStorage.setItem(storageKeyForDate(date), JSON.stringify({startHour: START_HOUR, rows: gatherData(), savedAt: new Date().toISOString()})); 
-      }catch(e){console.error("Autosave failed:", e)}
-      renderTotals();
-  }
+// ======= HELPER FUNCTIONS =======
+function fmtEmpty(v){ return (v||'').toString().trim(); }
 
+function buildText() {
+    let lines = [];
 
-  function resetAll(){
-    // IMPORTANT: Using window.confirm() for now, but should be replaced with custom modal
-    if(!window.confirm('Delete ALL saved data from this browser? This cannot be undone.')) return;
-    // remove keys that start with hourly-logger@
-    Object.keys(localStorage).forEach(k=>{ if(k.startsWith('hourly-logger@')) localStorage.removeItem(k); });
-    container.querySelectorAll('.hourly-slot-card').forEach(s=>s.querySelectorAll('input').forEach(i=>i.value=''));
-    window.alert('All data removed.');
-    renderTotals();
-  }
+    // Header
+    lines.push("*PASS / GUIDE CHANGE REPORT*");
 
-  // Compute totals for day and night
-  const numericFieldsInTotal = ['Discharged','Rolled','Cobble','Chop','Hotout','Total'];
-  // Day defined 07..18 inclusive, Night otherwise
-  const DAY_START = 7, DAY_END = 18;
+    // Fixed Details
+    lines.push(`Size: ${size?.value || "-" }MM`);
+    lines.push(`Date: ${dateIn?.value || "-"}`);
+    lines.push(`Shift: ${shift?.value || "-"}`);
+    lines.push(`Billet No: ${billet?.value || "-"}`);
+    lines.push("");
 
-  function computeTotals(){
-    const totals = {day:{}, night:{}};
-    numericFieldsInTotal.forEach(f=>{ totals.day[f]=0; totals.night[f]=0; });
-    container.querySelectorAll('.hourly-slot-card').forEach(s=>{
-      const hour = parseInt(s.dataset.hour,10);
-      const isDay = (DAY_START <= DAY_END) ? (hour >= DAY_START && hour <= DAY_END) : !(hour > DAY_END && hour < DAY_START);
-      numericFieldsInTotal.forEach(f=>{
-        const cls = f.toLowerCase();
-        // Defensive check: ensure the input element exists
-        const inputElement = s.querySelector('input.'+cls);
-        if (inputElement) {
-            const valStr = inputElement.value || '';
-            const n = parseFloat(valStr);
-            const num = isNaN(n) ? 0 : n;
-            if(isDay) totals.day[f] += num; else totals.night[f] += num;
-        } else {
-             console.warn(`Input element for field '${f}' not found in slot for hour ${hour}.`);
+    // JOBS
+    const jobs = document.querySelectorAll(".job-card");
+    let jobCounter = 1;
+
+    jobs.forEach(job => {
+        lines.push(`*Job #${jobCounter}*`);
+
+        const standVal = job.querySelector(".standSel")?.value || "-";
+        lines.push(`Stand No: ${standVal}`);
+
+        // pass / guide / stand change flags
+        const pcChecked = job.querySelector(".pc")?.checked;
+        const gcChecked = job.querySelector(".gc")?.checked;
+        const scChecked = job.querySelector(".sc")?.checked;
+
+        // Only print if checked
+        if (pcChecked) lines.push("*Pass Changed*");
+
+        if (gcChecked) {
+            lines.push("*Guide Changed*");
+
+            const gts = [...job.querySelectorAll(".gt:checked")]
+                .map(cb => cb.dataset.type);
+
+            if (gts.length) {
+                lines.push(`Guide Types: ${gts.join(", ")}`);
+            }
         }
-      });
+
+        if (scChecked) lines.push("*Stand Changed*");
+
+        // Remarks
+        const rem = job.querySelector(".remarks")?.value;
+        if (rem?.trim()) lines.push(`Remarks: ${rem}`);
+
+        lines.push(""); // spacing
+        jobCounter++;
     });
-    // round to 2 decimals if needed
-    numericFieldsInTotal.forEach(f=>{
-      totals.day[f] = Math.round((totals.day[f] + Number.EPSILON)*100)/100;
-      totals.night[f] = Math.round((totals.night[f] + Number.EPSILON)*100)/100;
-    });
-    return totals;
-  }
 
-  function renderTotals(){
-    const t = computeTotals();
-    const dayGrid = document.getElementById('dayTotalsGrid');
-    const nightGrid = document.getElementById('nightTotalsGrid');
-    dayGrid.innerHTML = '';
-    nightGrid.innerHTML = '';
-    // show fields in two-column layout: label | value
-    numericFieldsInTotal.forEach(f=>{
-      dayGrid.innerHTML += `<div class="font-medium">${f}:</div><div class="text-right text-gray-600">${t.day[f]}</div>`;
-      nightGrid.innerHTML += `<div class="font-medium">${f}:</div><div class="text-right text-gray-600">${t.night[f]}</div>`;
-    });
-  }
+    return lines.join("\n");
+}
 
-  
+function updatePreviewGuide() {
+    if(preview) preview.textContent = buildText();
+}
 
-  // Export a single slot as plain text and open native share or WhatsApp fallback
-  async function exportSlotAsText(slot){
-    const dateStr = formatDate(dateInput.value || new Date().toISOString().slice(0,10));
-    const hour = parseInt(slot.dataset.hour,10);
-    const timeLabel = formatSlot(hour);
-    const discharged = slot.querySelector('input.discharged').value.trim() || '0';
-    const rolled = slot.querySelector('input.rolled').value.trim() || '0';
-    const cobble = slot.querySelector('input.cobble').value.trim() || '0';
-    const chop = slot.querySelector('input.chop').value.trim() || '0';
-    const hotout = slot.querySelector('input.hotout').value.trim() || '0';
-    const delayItems = [...slot.querySelectorAll('.delay-item')]
-    .map(i => i.value.trim())
-    .filter(t => t.length > 0);
+// ======= BUTTON LISTENERS =======
+generateBtn?.addEventListener('click', updatePreviewGuide);
 
-const delay = delayItems.length
-    ? delayItems.map(d => `• ${d}`).join('\n')
-    : '-';
-
-    const total = slot.querySelector('input.total').value.trim() || '0';
-
-    const lines = [
-      `${dateStr}`,
-      `*${timeLabel}*`,
-      `Discharged: ${discharged}`,
-      `Rolled: ${rolled}`,
-      `Cobble: ${cobble}`,
-      `Chop: ${chop}`,
-      `Hotout: ${hotout}`,
-      `Delay:\n${delay}`,
-      `*Total: ${total}*`
-    ];
-    const text = lines.join('\n');
-
-    // Try Web Share API
-    if(navigator.share){
-      try{
-        await navigator.share({ title: `Hourly ${dateStr} ${timeLabel}`, text });
-        return;
-      }catch(e){}
-    }
-
-    // Fallback: copy to clipboard then open WhatsApp web
-    try{
-      if(navigator.clipboard && navigator.clipboard.writeText){
+copyBtn?.addEventListener('click', async () => {
+    const text = buildText();
+    try {
         await navigator.clipboard.writeText(text);
-        // Note: Using a custom modal instead of alert()
-        document.getElementById('hourly-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg" class="fixed top-4 right-4 bg-teal-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard.</div>');
-        setTimeout(() => document.getElementById('copy-msg')?.remove(), 2000);
-      }
-    }catch(e){ /* ignore clipboard errors */ }
-
-    const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
-    window.open(waUrl, '_blank');
-  }
-
-  // Share totals as text (day or night)
-  async function shareTotalsAsText(kind){ // kind = 'day' | 'night'
-    const totals = computeTotals();
-    const t = totals[kind];
-    const dateStr = formatDate(dateInput.value || new Date().toISOString().slice(0,10));
-    const header = kind === 'day' ? 'Day Totals (07:00 - 18:59)' : 'Night Totals (19:00 - 06:59)';
-    const lines = [
-      `${dateStr}`,
-      `*${header}*`,
-      `Discharged: ${t.Discharged}`,
-      `Rolled: ${t.Rolled}`,
-      `Cobble: ${t.Cobble}`,
-      `Chop: ${t.Chop}`,
-      `Hotout: ${t.Hotout}`,
-      `*Total: ${t.Total}*`
-    ];
-    const text = lines.join('\n');
-
-    if(navigator.share){
-      try{
-        await navigator.share({ title: `${header} ${dateStr}`, text });
-        return;
-      }catch(e){}
-    }
-
-    try{ 
-        if(navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(text); 
-            // Note: Using a custom modal instead of alert()
-            document.getElementById('hourly-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg-totals" class="fixed top-4 right-4 bg-teal-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard.</div>');
-            setTimeout(() => document.getElementById('copy-msg-totals')?.remove(), 2000);
+        if(document.getElementById('guide-log-container')) {
+            document.getElementById('guide-log-container').insertAdjacentHTML('afterbegin', 
+            '<div id="copy-msg-guide" class="fixed top-4 right-4 bg-coral-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard.</div>');
+            setTimeout(() => document.getElementById('copy-msg-guide')?.remove(), 2000);
         }
-    }catch(e){}
-    const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
-    window.open(waUrl, '_blank');
-  }
-
-  // Event wiring for Hourly Log
-  document.getElementById('resetAllBtn').addEventListener('click', resetAll);
- 
-  dateInput.addEventListener('change', autoSaveData); // Save/Load data when date changes
-  document.getElementById('shareDayBtn').addEventListener('click', ()=> shareTotalsAsText('day'));
-  document.getElementById('shareNightBtn').addEventListener('click', ()=> shareTotalsAsText('night'));
-
-  // Recalculate totals and autosave when any numeric input changes (event delegation)
-  container.addEventListener('input', (e)=>{
-    if(e.target && (e.target.tagName === 'INPUT')){
-      renderTotals();
-      // Trigger autosave when data is entered/changed
-      autoSaveData(); 
+    } catch(e) {
+        const ta = document.createElement('textarea'); 
+        ta.value = text; 
+        document.body.appendChild(ta); 
+        ta.select(); 
+        document.execCommand('copy'); 
+        ta.remove();
+        if(document.getElementById('guide-log-container')) {
+            document.getElementById('guide-log-container').insertAdjacentHTML('afterbegin', 
+            '<div id="copy-msg-guide-fail" class="fixed top-4 right-4 bg-coral-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard (fallback).</div>');
+            setTimeout(() => document.getElementById('copy-msg-guide-fail')?.remove(), 2000);
+        }
     }
-  });
+});
 
-  // Small helper: auto-save every 90 seconds (non-blocking)
-  setInterval(autoSaveData, 90_000);
-  
-  // =========================================================================
-  // PASS / GUIDE CHANGE LOGIC (from Pass & Guide Change Log v1.html)
-  // =========================================================================
+waBtn?.addEventListener('click', async () => {
 
-  // Elements (renamed date/shift to avoid conflict, although IDs are now unique)
-  const size = document.getElementById('dia');
-  const dateIn = document.getElementById('date_guide'); // Renamed
-  const shift = document.getElementById('shift_guide'); // Renamed
-  const billet = document.getElementById('billet');
-  const stand = document.getElementById('stand');
-  const passChange = document.getElementById('passChange');
-  const guideChange = document.getElementById('guideChange');
-  const standChange = document.getElementById('standChange');
-  const guideTypeRow = document.getElementById('guideTypeRow');
-  const extra = document.getElementById('extra');
-  const preview = document.getElementById('preview');
-  const generateBtn = document.getElementById('generate');
-  const copyBtn = document.getElementById('copy');
-  const waBtn = document.getElementById('wa');
-  const clearBtn = document.getElementById('clear');
-
-  // Initial form setup
-  dateIn.value = new Date().toISOString().split('T')[0];
-  const hour = new Date().getHours();
-  shift.value = (hour >= 8 && hour < 20) ? 'DAY' : 'NIGHT';
-
-  // Show/hide guide type input block
-  guideChange.addEventListener('change', () => {
-    guideTypeRow.style.display = guideChange.checked ? 'flex' : 'none';
-    if(!guideChange.checked) {
-      // Uncheck all guide type checkboxes when main guide change is unchecked
-      guideTypeRow.querySelectorAll('.guide-type-checkbox').forEach(cb => cb.checked = false);
-    }
-    updatePreviewGuide();
-  });
-
-  function fmtEmpty(v){ return (v||'').toString().trim(); }
-
-  function buildText(){
-    const vsize = fmtEmpty(size.value);
-    const d = fmtEmpty(dateIn.value);
-    const s = fmtEmpty(shift.value);
-    const b = fmtEmpty(billet.value);
-    const st = fmtEmpty(stand.value);
-    const pc = passChange.checked ? 'Yes' : 'No';
-    const gc = guideChange.checked ? 'Yes' : 'No';
-    const sc = standChange.checked ? 'Yes' : 'No';
-    const ex = fmtEmpty(extra.value);
-
-    // Collect selected guide types
-    let guideTypesSelected = [];
-    if(guideChange.checked) {
-      guideTypesSelected = Array.from(guideTypeRow.querySelectorAll('.guide-type-checkbox:checked'))
-                            .map(cb => cb.dataset.guideType);
-    }
-    const gtText = guideTypesSelected.length > 0 ? ` (${guideTypesSelected.join(', ')})` : '';
-
-
-    // Use readable date if available
-    let dateText = d;
-    if(d){
-      try{ const dt = new Date(d); dateText = dt.toLocaleDateString('en-GB'); }catch(e){}
-    }
-
-    const lines = [];
-    lines.push('*PASS / GUIDE CHANGE REPORT*');
-    lines.push('Size: ' + (vsize || '-')+'MM');
-    lines.push('Date: ' + (dateText || '-'));
-    lines.push('Shift: ' + (s || '-'));
-    lines.push('Billet No: ' + (b || '-'));
-    lines.push('*Stand No: ' + (st || '-')+'*'); // Changed 'Old Stand No' to 'Stand No' for simplicity
-
-    lines.push('\nChanges:');
-    lines.push('- Pass Change: ' + pc);
-    lines.push('- Guide Change: ' + gc + gtText);
-    lines.push('- Stand Change: ' + sc);
-
-    if(ex) lines.push('\nRemarks: ' + ex);
-
-    
-    return lines.join('\n');
-  }
-
-  function updatePreviewGuide(){ preview.textContent = buildText(); }
-
-  generateBtn.addEventListener('click', updatePreviewGuide);
-
-  copyBtn.addEventListener('click', async () => {
     const text = buildText();
-    try{
-      // Use navigator.clipboard API
-      await navigator.clipboard.writeText(text);
-      document.getElementById('guide-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg-guide" class="fixed top-4 right-4 bg-coral-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard.</div>');
-      setTimeout(() => document.getElementById('copy-msg-guide')?.remove(), 2000);
-    }catch(e){
-      // Fallback using document.execCommand('copy')
-      const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
-      document.getElementById('guide-log-container').insertAdjacentHTML('afterbegin', '<div id="copy-msg-guide-fail" class="fixed top-4 right-4 bg-coral-btn text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard (fallback).</div>');
-      setTimeout(() => document.getElementById('copy-msg-guide-fail')?.remove(), 2000);
-    }
-  });
 
-  waBtn.addEventListener('click', () => {
-    const text = buildText();
+    // Try native share first
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: "Pass / Guide Change Report",
+                text: text
+            });
+            return;
+        } catch (err) {
+            // continue to next fallback
+        }
+    }
+
+    // Try copying to clipboard
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+
+            // Custom toast message
+            document.body.insertAdjacentHTML(
+                'afterbegin',
+                '<div id="copy-msg" class="fixed top-4 right-4 bg-teal-600 text-white p-3 rounded-lg shadow-xl z-50">Copied to clipboard.</div>'
+            );
+            setTimeout(() => document.getElementById('copy-msg')?.remove(), 2000);
+        }
+    } catch (err) {
+        // ignore clipboard issues
+    }
+
+    // Last fallback → WhatsApp Web
     const encoded = encodeURIComponent(text);
-    const url = 'https://api.whatsapp.com/send?text=' + encoded;
-    window.open(url, '_blank');
-  });
+    window.open('https://api.whatsapp.com/send?text=' + encoded, '_blank');
+});
 
-  clearBtn.addEventListener('click', ()=>{
-    dateIn.value = new Date().toISOString().split('T')[0];
-    shift.value = (new Date().getHours() >= 8 && new Date().getHours() < 20) ? 'DAY' : 'NIGHT'; 
-    billet.value=''; 
-    stand.value=''; 
-    passChange.checked=false; 
-    guideChange.checked=false; 
-    standChange.checked=false; 
-    
-    // Clear all guide type checkboxes
+
+clearBtn?.addEventListener('click', ()=>{
+    if(dateIn) dateIn.value = new Date().toISOString().split('T')[0];
+    if(shift) {
+        const hour = new Date().getHours();
+        shift.value = (hour >= 8 && hour < 20) ? 'DAY' : 'NIGHT';
+    }
+    billet.value = '';
+    stand.value = '';
+    passChange.checked = false;
+    guideChange.checked = false;
+    standChange.checked = false;
+    extra.value = '';
+    guideTypeRow.style.display = 'none';
     guideTypeRow.querySelectorAll('.guide-type-checkbox').forEach(cb => cb.checked = false);
+    if(preview) preview.textContent = 'Fill the form and click "Generate"';
+    updateStandOptions();
+    if(size) size.value = '';
 
-    extra.value=''; 
-    guideTypeRow.style.display='none'; 
-    preview.textContent='Fill the form and click "Generate"';
-    updateStandOptions(); // Reset stand options
-    size.value = ''; // Clear size selection
-  });
-
-  // live preview for convenience
-  // Listen to all guide type checkboxes for changes
-  guideTypeRow.querySelectorAll('.guide-type-checkbox').forEach(cb => {
-      cb.addEventListener('change', updatePreviewGuide);
-  });
-  [size, dateIn, shift, billet, stand, extra].forEach(el=>el.addEventListener('input', updatePreviewGuide));
-  [passChange, guideChange, standChange].forEach(cb=>cb.addEventListener('change', updatePreviewGuide));
+     // ⬇⬇⬇ IMPORTANT: Refresh preview after clearing
+    updatePreviewGuide();
+});
 
 
-  size.addEventListener("change", updateStandOptions);
+// ======= LIVE PREVIEW =======
+guideTypeRow?.querySelectorAll('.guide-type-checkbox').forEach(cb => {
+    cb.addEventListener('change', updatePreviewGuide);
+});
 
-  function updateStandOptions() {
-    const value = size.value;
-    stand.innerHTML = "<option value=''>-- select stand no --</option>"; // clear and add default
+[size, dateIn, shift, billet, stand, extra].forEach(el => {
+    el?.addEventListener('input', updatePreviewGuide);
+});
 
-    // Always include A and B
+[passChange, guideChange, standChange].forEach(cb => {
+    cb?.addEventListener('change', updatePreviewGuide);
+});
+
+// ======= UPDATE STAND OPTIONS =======
+size?.addEventListener('change', updateStandOptions);
+
+function updateStandOptions() {
+    if(!stand) return;
+    const value = size?.value;
+    stand.innerHTML = "<option value=''>-- select stand no --</option>";
+
     const letters = ["A", "B"];
     letters.forEach(l => {
-      const opt = document.createElement("option");
-      opt.value = l;
-      opt.textContent = l;
-      stand.appendChild(opt);
+        const opt = document.createElement("option");
+        opt.value = l;
+        opt.textContent = l;
+        stand.appendChild(opt);
     });
 
     let maxStand = 18;
@@ -889,46 +1011,34 @@ const delay = delayItems.length
     else if (value === "12" || value === "16") maxStand = 16;
     else if (value === "20") maxStand = 14;
     else if (value === "25") maxStand = 12;
-    else if (value === "32") {
-      maxStand = 12;
-      omit = [9, 10];
-    }
+    else if (value === "32") { maxStand = 12; omit = [9, 10]; }
 
     for (let i = 1; i <= maxStand; i++) {
-      if (omit.includes(i)) continue;
-
-      const opt = document.createElement("option");
-      opt.value = i;
-      opt.textContent = i;
-      stand.appendChild(opt);
+        if(omit.includes(i)) continue;
+        const opt = document.createElement("option");
+        opt.value = i;
+        opt.textContent = i;
+        stand.appendChild(opt);
     }
     updatePreviewGuide();
-  }
-  
-  // =========================================================================
-  // INITIALIZATION
-  // =========================================================================
-  
-  function initApp() {
+}
+
+// ======= INITIALIZATION =======
+function initApp() {
     try {
-        // Initialize Hourly Log components
-        buildSlots();
+        // Optional: define or comment out if not needed
+        if(typeof buildSlots === 'function') buildSlots();
+        if(typeof switchView === 'function') switchView(defaultView);
 
-        // Initialize Pass/Guide Log components
         updateStandOptions(); 
-
-        // Set default view on load
-        switchView(defaultView);
         console.log("App initialization complete.");
-    } catch (e) {
-        console.error("Critical error during application initialization:", e);
+    } catch(e) {
+        console.error("Critical error during initialization:", e);
     }
-  }
+}
 
-  // Call the initialization function after all definitions
-  initApp();
-
-</script>
+initApp();
+    </script>
 </body>
-</html>
 
+</html>
