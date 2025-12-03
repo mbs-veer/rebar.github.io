@@ -280,8 +280,6 @@
                         <div class="grid grid-cols-2 gap-2 text-sm">
                             <label><input class="gt" data-type="Entry" type="checkbox"> Entry</label>
                             <label><input class="gt" data-type="Delivery" type="checkbox"> Delivery</label>
-                            <label><input class="gt" data-type="Slitter" type="checkbox"> Slitter</label>
-                            <label><input class="gt" data-type="Others" type="checkbox"> Others</label>
                         </div>
                     </div>
         
@@ -468,7 +466,7 @@
         
         const delayLabel = document.createElement('label');
         delayLabel.className = 'text-xs font-medium text-gray-700 block mb-1';
-        delayLabel.textContent = 'Delay / Reasons for Interruption (Mandatory)';
+        delayLabel.textContent = 'Delay';
         
         const delayList = document.createElement('div');
         delayList.className = 'delay-list flex flex-col gap-2';
@@ -845,8 +843,7 @@ function buildText() {
     let jobCounter = 1;
 
     jobs.forEach(job => {
-        lines.push(`*Job #${jobCounter}*`);
-
+       
         const standVal = job.querySelector(".standSel")?.value || "-";
         lines.push(`Stand No: ${standVal}`);
 
@@ -859,13 +856,13 @@ function buildText() {
         if (pcChecked) lines.push("*Pass Changed*");
 
         if (gcChecked) {
-            lines.push("*Guide Changed*");
+            
 
             const gts = [...job.querySelectorAll(".gt:checked")]
                 .map(cb => cb.dataset.type);
 
             if (gts.length) {
-                lines.push(`Guide Types: ${gts.join(", ")}`);
+                lines.push(`*${gts.join(", ")} Guide Changed*`);
             }
         }
 
