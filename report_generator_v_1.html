@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WhatsApp Zip → Excel — Beautified</title>
+
+  <!-- Google font similar to Airbnb's friendly UI -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#f7f7f8; /* very light gray */
+      --card:#ffffff;
+      --muted:#6b7280;
+      --accent:#FF5A5F; /* Airbnb coral */
+      --accent-dark:#e24b50;
+      --glass: rgba(255,255,255,0.6);
+      --radius:14px;
+      --shadow: 0 6px 20px rgba(16,24,40,0.08);
+      --radius-sm:10px;
+      --max-width:920px;
+      font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      color: #111827;
+    }
+
+    html,body{height:100%;}
+    body{
+      margin:0;
+      min-height:100%;
+      background: linear-gradient(180deg, #fbfbfc 0%, var(--bg) 100%);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:40px 20px;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+    }
+
+    .shell{
+      width:100%;
+      max-width:var(--max-width);
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+      display:grid;
+      grid-template-columns: 1fr 380px;
+    }
+
+    /* left content */
+    .main{
+      padding:34px 32px;
+    }
+
+    .brand{
+      display:flex;align-items:center;gap:14px;margin-bottom:8px;
+    }
+    .logo{
+      width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#ff8a80);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px;box-shadow:0 6px 18px rgba(255,90,95,0.12);
+    }
+    h1{font-size:20px;margin:0 0 6px 0;font-weight:700;}
+    p.lead{margin:0;color:var(--muted);font-size:14px}
+
+    .file-area{
+      margin-top:22px;
+      border:1px dashed rgba(17,24,39,0.06);
+      background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
+      padding:18px;border-radius:12px;display:flex;gap:14px;align-items:center;
+    }
+
+    .file-area input[type=file]{display:none}
+
+    .file-drop{flex:1;display:flex;gap:12px;align-items:center}
+    .file-drop .hint{font-size:14px;color:var(--muted)}
+
+    .btn{
+      display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:14px;background:var(--accent);color:white;box-shadow: 0 8px 24px rgba(255,90,95,0.14);
+    }
+    .btn.secondary{background:transparent;color:var(--accent);box-shadow:none;border:1px solid rgba(17,24,39,0.06)}
+    .btn:hover{transform:translateY(-1px)}
+
+    /* small meta */
+    .meta{margin-top:14px;font-size:13px;color:var(--muted)}
+
+    /* right panel */
+    .side{
+      padding:24px;background:linear-gradient(180deg, #fff, #fbfcfd);border-left:1px solid rgba(17,24,39,0.03);
+      display:flex;flex-direction:column;gap:16px;align-items:stretch
+    }
+    .card{background:var(--glass);backdrop-filter: blur(6px);padding:14px;border-radius:12px;border:1px solid rgba(17,24,39,0.04)}
+
+    label.small{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+    .preview{font-size:13px;color:#111827;font-weight:600}
+
+    /* footer */
+    .foot{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:14px 32px;border-top:1px solid rgba(17,24,39,0.03);background:transparent}
+    .foot .muted{color:var(--muted);font-size:13px}
+
+    /* responsive */
+    @media (max-width:980px){
+      .shell{grid-template-columns:1fr}
+      .side{order:2}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell" role="main">
+    <div class="main">
+      <div class="brand">
+        <div class="logo">WA</div>
+        <div>
+          <h1>WhatsApp Zip → Excel</h1>
+          <p class="lead">Upload a WhatsApp exported ZIP and get parsed shift logs as an Excel file. Works with multi-line "Delay:" entries.</p>
+        </div>
+      </div>
+
+      <div class="file-area" aria-hidden="false">
+        <div class="file-drop">
+          <div>
+            <label class="small">Choose ZIP file</label>
+            <div style="display:flex;gap:10px;align-items:center">
+              <label for="zipFile" class="btn secondary" style="padding:8px 12px;">Browse…</label>
+              <div class="hint" id="fileName">No file chosen</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+          <input type="file" id="zipFile" accept=".zip" onchange="showFile(event)">
+          <button class="btn" onclick="processZip()">Parse &amp; Download</button>
+        </div>
+      </div>
+
+      
+
+      <div style="margin-top:20px;font-size:13px;color:var(--muted);line-height:1.5">
+        <strong>How it works</strong>
+        <ul style="margin:10px 0 0 18px;padding:0;color:var(--muted)">
+          <li>Forward all the related WhatsApp texts to a dedicated chat page</li>
+          <li>Export the entire texts into a zip file.</li>
+          <li>Upload the exported zip file to generate an .xlsx you can open in Excel or Google Sheets</li>
+        </ul>
+      </div>
+    </div>
+
+    <aside class="side">
+      <div class="card">
+        <label class="small">Status</label>
+        <div class="preview" id="statusPreview">Waiting for file</div>
+      </div>
+
+      <div class="card">
+        <label class="small">Last run</label>
+        <div class="preview" id="lastRun">—</div>
+      </div>
+
+      <div class="card">
+        <label class="small">Output</label>
+        <div class="preview">Excel (.xlsx)</div>
+      </div>
+
+      <div style="flex:1"></div>
+
+     
+    </aside>
+  </div>
+
+  <script>
+    function showFile(e){
+      const file = e.target.files[0];
+      document.getElementById('fileName').textContent = file ? file.name : 'No file chosen';
+      document.getElementById('statusPreview').textContent = file ? 'Ready to parse' : 'Waiting for file';
+    }
+
+    async function processZip(){
+      const fileInput = document.getElementById('zipFile');
+      if(!fileInput.files[0]){ alert('Please upload a zip file.'); return; }
+      const file = fileInput.files[0];
+
+      document.getElementById('statusPreview').textContent = 'Parsing...';
+      const jszip = new JSZip();
+      const zip = await jszip.loadAsync(file);
+      let allText = '';
+
+      for (let filename of Object.keys(zip.files)){
+        if (filename.toLowerCase().endsWith('.txt')){
+          const content = await zip.files[filename].async('string');
+          allText += '\n' + content;
+        }
+      }
+
+      if(!allText){ alert('No text files found in zip.'); document.getElementById('statusPreview').textContent = 'No text files found'; return; }
+
+      const messages = allText.split(/\d{2}\/\d{2}\/\d{2},\s*\d{1,2}:\d{2}\s*(?:am|pm)\s*-\s*.+?:/i)
+                              .map(m => m.trim()).filter(m => m.length>0);
+
+      const records = messages.map(msg => {
+        const dateMatch = msg.match(/(\d{2}-\w{3}-\d{4})/);
+        const timeMatch = msg.match(/\*(.*?)\*/);
+
+        const getField = key => { const m = msg.match(new RegExp(key + ":\\s*(.*)", "i")); return m ? m[1].trim() : ''; };
+
+        // Multi-line Delay block handling
+        let delay = '';
+        const delayStart = msg.indexOf('Delay:');
+        if(delayStart !== -1){
+          let afterDelay = msg.substring(delayStart + 6).trim();
+          afterDelay = afterDelay.split(/\*Total:/i)[0].trim();
+          const delayLines = afterDelay.split('\n').map(l => l.trim()).filter(l => l.startsWith('•') || l === '-' || l.startsWith('-'));
+          delay = delayLines.join('\n');
+        }
+
+        return {
+          date: dateMatch ? dateMatch[1] : '',
+          time: timeMatch ? timeMatch[1] : '',
+          discharged: getField('Discharged'),
+          rolled: getField('Rolled'),
+          cobble: getField('Cobble'),
+          chop: getField('Chop'),
+          hotout: getField('Hotout'),
+          delay: delay
+        };
+      });
+
+      if(records.length === 0){ alert('No records found. Check format.'); document.getElementById('statusPreview').textContent = 'No records found'; return; }
+
+      const ws = XLSX.utils.json_to_sheet(records);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'ShiftLogs');
+      XLSX.writeFile(wb, 'WhatsApp_ShiftLogs.xlsx');
+
+      document.getElementById('statusPreview').textContent = 'Done — file downloaded';
+      document.getElementById('lastRun').textContent = new Date().toLocaleString();
+    }
+  </script>
+</body>
+</html>
