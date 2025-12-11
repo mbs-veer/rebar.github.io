@@ -16,15 +16,15 @@
       --bg:#f7f7f8; /* very light gray */
       --card:#ffffff;
       --muted:#6b7280;
-      --accent:#FF5A5F; /* Airbnb coral */
+      --accent:#25D366; /* Airbnb coral */
       --accent-dark:#e24b50;
       --glass: rgba(255,255,255,0.6);
       --radius:14px;
       --shadow: 0 6px 20px rgba(16,24,40,0.08);
       --radius-sm:10px;
       --max-width:920px;
-      font-family: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-      color: #111827;
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  color: #111827;
     }
 
     html,body{height:100%;}
@@ -111,131 +111,128 @@
   <div class="shell" role="main">
     <div class="main">
       <div class="brand">
-        <div class="logo">WA</div>
-        <div>
-          <h1>WhatsApp Zip → Excel</h1>
-          <p class="lead">Upload a WhatsApp exported ZIP and get parsed shift logs as an Excel file. Works with multi-line "Delay:" entries.</p>
+        
+        <div> <h1 style="
+  background: linear-gradient(90deg, #25D366 0%, #1E88E5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 700;
+">
+  WhatsApp Zip → Excel
+</h1>
+
+         
+          <p class="lead">Upload a WhatsApp exported ZIP and get parsed shift logs as an Excel file.</p>
         </div>
       </div>
 
       <div class="file-area" aria-hidden="false">
-        <div class="file-drop">
-          <div>
-            <label class="small">Choose ZIP file</label>
-            <div style="display:flex;gap:10px;align-items:center">
-              <label for="zipFile" class="btn secondary" style="padding:8px 12px;">Browse…</label>
-              <div class="hint" id="fileName">No file chosen</div>
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-          <input type="file" id="zipFile" accept=".zip" onchange="showFile(event)">
-          <button class="btn" onclick="processZip()">Parse &amp; Download</button>
-        </div>
-      </div>
-
-      
-
-      <div style="margin-top:20px;font-size:13px;color:var(--muted);line-height:1.5">
-        <strong>How it works</strong>
-        <ul style="margin:10px 0 0 18px;padding:0;color:var(--muted)">
-          <li>Forward all the related WhatsApp texts to a dedicated chat page</li>
-          <li>Export the entire texts into a zip file.</li>
-          <li>Upload the exported zip file to generate an .xlsx you can open in Excel or Google Sheets</li>
-        </ul>
+  <div class="file-drop">
+    <div>
+      <label class="small">Choose ZIP file</label>
+      <div style="display:flex;gap:10px;align-items:center">
+        <label for="zipFile" class="btn secondary" style="padding:8px 12px;">Browse…</label>
+        <div class="hint" id="fileName">No file chosen</div>
       </div>
     </div>
-
-    <aside class="side">
-      <div class="card">
-        <label class="small">Status</label>
-        <div class="preview" id="statusPreview">Waiting for file</div>
-      </div>
-
-      <div class="card">
-        <label class="small">Last run</label>
-        <div class="preview" id="lastRun">—</div>
-      </div>
-
-      <div class="card">
-        <label class="small">Output</label>
-        <div class="preview">Excel (.xlsx)</div>
-      </div>
-
-      <div style="flex:1"></div>
-
-     
-    </aside>
   </div>
 
-  <script>
-    function showFile(e){
-      const file = e.target.files[0];
-      document.getElementById('fileName').textContent = file ? file.name : 'No file chosen';
-      document.getElementById('statusPreview').textContent = file ? 'Ready to parse' : 'Waiting for file';
+  <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
+    <input type="file" id="zipFile" accept=".zip" onchange="showFile(event)">
+    <button class="btn" onclick="processZip()">Download</button>
+    <div id="statusPreview" style="margin-top:6px;font-size:13px;color:#6b7280;">Waiting for file</div>
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+   function showFile(e){
+  const file = e.target.files[0];
+  document.getElementById('fileName').textContent = file ? file.name : 'No file chosen';
+  document.getElementById('statusPreview').textContent = file ? 'Ready to parse' : 'Waiting for file';
+}
+async function processZip(){
+  const fileInput = document.getElementById('zipFile');
+  if(!fileInput.files[0]){
+    alert('Please upload a zip file.');
+    return;
+  }
+  const file = fileInput.files[0];
+  const status = document.getElementById('statusPreview');
+  status.textContent = 'Parsing...';
+
+  const jszip = new JSZip();
+  const zip = await jszip.loadAsync(file);
+  let allText = '';
+
+  for (let filename of Object.keys(zip.files)){
+    if(filename.toLowerCase().endsWith('.txt')){
+      const content = await zip.files[filename].async('string');
+      allText += '\n' + content;
+    }
+  }
+
+  if(!allText){
+    alert('No text files found in zip.');
+    status.textContent = 'No text files found';
+    return;
+  }
+
+  const messages = allText.split(/\d{2}\/\d{2}\/\d{2},\s*\d{1,2}:\d{2}\s*(?:am|pm)\s*-\s*.+?:/i)
+                          .map(m => m.trim()).filter(m => m.length>0);
+
+  const records = messages.map(msg => {
+    const dateMatch = msg.match(/(\d{2}-\w{3}-\d{4})/);
+    const timeMatch = msg.match(/\*(.*?)\*/);
+    const getField = key => { 
+      const m = msg.match(new RegExp(key + ":\\s*(.*)", "i")); 
+      return m ? m[1].trim() : ''; 
+    };
+
+    let discharged = parseFloat(getField('Discharged')) || 0;
+    let cobble = parseFloat(getField('Cobble')) || 0;
+    let chop = parseFloat(getField('Chop')) || 0;
+    let hotout = parseFloat(getField('Hotout')) || 0;
+
+    let delay = '';
+    const delayStart = msg.indexOf('Delay:');
+    if(delayStart !== -1){
+      let afterDelay = msg.substring(delayStart + 6).trim();
+      afterDelay = afterDelay.split(/\*Total:/i)[0].trim();
+      const delayLines = afterDelay.split('\n').map(l => l.trim()).filter(l => l.startsWith('•') || l === '-' || l.startsWith('-'));
+      delay = delayLines.join('\n');
     }
 
-    async function processZip(){
-      const fileInput = document.getElementById('zipFile');
-      if(!fileInput.files[0]){ alert('Please upload a zip file.'); return; }
-      const file = fileInput.files[0];
+    return {
+      date: dateMatch ? dateMatch[1] : '',
+      time: timeMatch ? timeMatch[1] : '',
+      Discharged: discharged,
+      Hotout: hotout === 0 ? '' : hotout,
+       "Entered in Mill": discharged - hotout,
+      Cobble: cobble === 0 ? '' : cobble,
+      Chop: chop === 0 ? '' : chop,
+      
+     
+      Delay: delay
+    };
+  });
 
-      document.getElementById('statusPreview').textContent = 'Parsing...';
-      const jszip = new JSZip();
-      const zip = await jszip.loadAsync(file);
-      let allText = '';
+  if(records.length === 0){
+    alert('No records found. Check format.');
+    status.textContent = 'No records found';
+    return;
+  }
 
-      for (let filename of Object.keys(zip.files)){
-        if (filename.toLowerCase().endsWith('.txt')){
-          const content = await zip.files[filename].async('string');
-          allText += '\n' + content;
-        }
-      }
+  const ws = XLSX.utils.json_to_sheet(records);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'ShiftLogs');
+  XLSX.writeFile(wb, 'WhatsApp_ShiftLogs.xlsx');
 
-      if(!allText){ alert('No text files found in zip.'); document.getElementById('statusPreview').textContent = 'No text files found'; return; }
+  status.textContent = 'Done — file downloaded';
+}
 
-      const messages = allText.split(/\d{2}\/\d{2}\/\d{2},\s*\d{1,2}:\d{2}\s*(?:am|pm)\s*-\s*.+?:/i)
-                              .map(m => m.trim()).filter(m => m.length>0);
 
-      const records = messages.map(msg => {
-        const dateMatch = msg.match(/(\d{2}-\w{3}-\d{4})/);
-        const timeMatch = msg.match(/\*(.*?)\*/);
-
-        const getField = key => { const m = msg.match(new RegExp(key + ":\\s*(.*)", "i")); return m ? m[1].trim() : ''; };
-
-        // Multi-line Delay block handling
-        let delay = '';
-        const delayStart = msg.indexOf('Delay:');
-        if(delayStart !== -1){
-          let afterDelay = msg.substring(delayStart + 6).trim();
-          afterDelay = afterDelay.split(/\*Total:/i)[0].trim();
-          const delayLines = afterDelay.split('\n').map(l => l.trim()).filter(l => l.startsWith('•') || l === '-' || l.startsWith('-'));
-          delay = delayLines.join('\n');
-        }
-
-        return {
-          date: dateMatch ? dateMatch[1] : '',
-          time: timeMatch ? timeMatch[1] : '',
-          discharged: getField('Discharged'),
-          rolled: getField('Rolled'),
-          cobble: getField('Cobble'),
-          chop: getField('Chop'),
-          hotout: getField('Hotout'),
-          delay: delay
-        };
-      });
-
-      if(records.length === 0){ alert('No records found. Check format.'); document.getElementById('statusPreview').textContent = 'No records found'; return; }
-
-      const ws = XLSX.utils.json_to_sheet(records);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'ShiftLogs');
-      XLSX.writeFile(wb, 'WhatsApp_ShiftLogs.xlsx');
-
-      document.getElementById('statusPreview').textContent = 'Done — file downloaded';
-      document.getElementById('lastRun').textContent = new Date().toLocaleString();
-    }
   </script>
 </body>
 </html>
