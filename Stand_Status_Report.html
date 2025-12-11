@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Stand Status — Report for Sharing</title>
+  <style>
+    :root{
+      --bg:#f7f7f8;
+      --card:#ffffff;
+      --muted:#6b7280;
+      --accent:#FF5A5F;
+      --accent-dark:#e24b50;
+      --green:#25D366;
+      --radius:14px;
+      --shadow:0 8px 24px rgba(0,0,0,0.08);
+    }
+    body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;margin:0;background:var(--bg);color:#1f2937;padding:10px}
+    .container{max-width:900px;margin:0 auto;padding:0}
+    .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-top:14px;box-shadow:0 3px 12px rgba(0,0,0,0.1)}
+    h1{margin:0 0 10px;font-size:22px;font-weight:700}
+    p.lead{margin:0 0 16px;color:var(--muted);font-size:14px}
+    input,select,textarea{border:1px solid #e5e7eb;border-radius:10px;padding:10px;font-size:14px}
+    label{font-size:13px;color:var(--muted);display:block;margin-bottom:4px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+    .stand{border:1px solid #ececec;border-radius:var(--radius);padding:14px;background:#fff;box-shadow:0 3px 12px rgba(0,0,0,0.1)}
+    .stand h4{margin:0 0 10px;font-size:15px;font-weight:600;color:#374151}
+    .status-group{display:flex;gap:8px;margin-bottom:8px}
+    .status-btn{flex:1;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;text-align:center;font-size:13px;cursor:pointer;transition:all .2s}
+    .status-btn.active{background:var(--accent);color:#fff;border-color:var(--accent-dark);box-shadow:0 3px 10px rgba(255,90,95,0.3)}
+    label{display:flex;align-items:center;gap:6px;margin-bottom:4px;color:#374151}
+    .remark{margin-top:10px}
+    .remark-input{width:100%;min-height:50px;resize:vertical;overflow:auto;box-sizing:border-box}
+    button{border:0;padding:10px 14px;border-radius:var(--radius);color:#fff;cursor:pointer;font-size:14px;font-weight:600;box-shadow:0 3px 12px rgba(0,0,0,0.1);transition:background .2s;margin-right:8px;margin-top:8px}
+    #shareBtn{background:var(--green)}
+    #shareBtn:hover{background:#1ebe5d}
+    #generate{background:grey}
+    #clearBtn {
+  background: #fff;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+#clearBtn:hover {
+  background: #fff0f0;
+}
+
+   #reportOutput{
+  background:#fafafa;
+  min-height:160px;
+  overflow:auto;
+  width:100%;
+  box-sizing:border-box;
+}
+
+    @media(max-width:480px){h1{font-size:20px}.card{padding:16px}button{width:100%;margin-right:0;margin-bottom:8px}.actions{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>Stand Status Report</h1>
+      <p class="lead">Pick status for each stand. Click <em>Generate Report</em> to create a text for sharing.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
+        <label class="muted">Date: <input id="reportDate" type="date" style="margin-left:8px"></label>
+        <label class="muted">Shift:
+          <select id="shiftInput" style="margin-left:8px">
+            <option value="Day">Day</option>
+            <option value="Night">Night</option>
+          </select>
+        </label>
+        <label class="muted">Time (optional): <input id="reportTime" type="time" style="margin-left:8px"></label>
+        <label class="muted">Prepared by: <input id="preparedBy" type="text" placeholder="Your name" style="margin-left:8px"></label>
+      </div>
+      <div class="grid" id="standsGrid"></div>
+      <div style="margin-top:12px">
+        <label class="muted">General Remarks (optional)</label>
+        <textarea id="generalRemarks" placeholder="Any overall remarks for the report..." style="min-height:50px;resize:vertical;overflow:auto;width:100%;box-sizing:border-box">
+</textarea>
+      </div>
+      <div class="actions" style="margin-top:12px">
+        <button id="generate">Generate Report</button>
+        <button id="shareBtn">Share Report</button>
+        <button id="clearBtn">Clear</button>
+      </div>
+      <div style="margin-top:12px">
+        <label class="muted">Preview / Share Text</label>
+        <textarea id="reportOutput" readonly placeholder="Generated report will appear here..."></textarea>
+      </div>
+    </div>
+  </div>
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const stands = ['Stand A&B','Stand 1&2','Stand 3','Stand 4','Stand 5','Stand 6','Stand 7','Stand 8','Stand 9','Stand 10'];
+  const grid = document.getElementById('standsGrid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  stands.forEach((s, idx) => {
+    const id = 'stand_'+idx;
+    const div = document.createElement('div');
+    div.className = 'stand';
+    div.innerHTML = `
+      <h4>${s}</h4>
+      <div class="status-group" data-stand="${id}">
+        <div class="status-btn active" data-value="Stand Ready/Install">Stand Ready/Install</div>
+        <div class="status-btn" data-value="Roll Ready">Roll Ready</div>
+        <div class="status-btn" data-value="Not Ready">Not Ready</div>
+      </div>
+      <div class="remark" style="display:block">
+        <label class="muted">Remarks (optional)</label>
+        <textarea class="remark-input" placeholder="Enter remarks..." style="min-height:50px;resize:vertical;overflow:auto"></textarea>
+      </div>
+    `;
+    grid.appendChild(div);
+    const buttons = div.querySelectorAll('.status-btn');
+    buttons.forEach(btn => {
+      btn.addEventListener('click', ()=>{
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  });
+  function buildReportText(){
+    const date = document.getElementById('reportDate').value || new Date().toISOString().slice(0,10);
+    const shift = document.getElementById('shiftInput').value;
+    const time = document.getElementById('reportTime').value.trim();
+    const prepared = document.getElementById('preparedBy').value.trim();
+    const generalRemarks = document.getElementById('generalRemarks').value.trim();
+    let lines = [];
+    lines.push(`Date: ${date}`);
+    if(shift) lines.push(`Shift: ${shift}`);
+    if(time) lines.push(`Time: ${time}`);
+    if(prepared) lines.push(`Prepared by: ${prepared}`);
+    lines.push('');
+    lines.push('Stand Status:');
+    const standCards = document.querySelectorAll('.stand');
+    standCards.forEach((div, i)=>{
+      const name = stands[i];
+      const selected = div.querySelector('.status-btn.active').dataset.value;
+      const remark = div.querySelector('.remark-input').value.trim();
+      if(remark){
+        lines.push(`- ${name}: ${selected} — ${remark}`);
+      } else {
+        lines.push(`- ${name}: ${selected}`);
+      }
+    });
+    if(generalRemarks){
+      lines.push('');
+      lines.push('General Remarks:');
+      lines.push(generalRemarks);
+    }
+    lines.push('');
+    return lines.join('\n');
+  }
+  document.getElementById('generate').addEventListener('click', ()=>{
+    document.getElementById('reportOutput').value = buildReportText();
+  });
+  document.getElementById('shareBtn').addEventListener('click', ()=>{
+    const text = buildReportText();
+    if(!text) return;
+    if(navigator.share){
+      navigator.share({text:text});
+    } else {
+      alert('Copy the text manually:\n\n' + text);
+    }
+  });
+  document.getElementById('clearBtn').addEventListener('click', ()=>{
+    document.getElementById('reportOutput').value = '';
+    document.getElementById('generalRemarks').value = '';
+    document.getElementById('preparedBy').value = '';
+    document.getElementById('reportTime').value = '';
+    const standCards = document.querySelectorAll('.stand');
+    standCards.forEach((div, i)=>{
+      div.querySelector('.status-btn.active').classList.remove('active');
+      div.querySelector('.status-btn').classList.add('active');
+      div.querySelector('.remark-input').value = '';
+    });
+  });
+  document.getElementById('reportDate').value = new Date().toISOString().slice(0,10);
+});
+</script>
+</body>
+</html>
