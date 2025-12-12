@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"> <!-- mobile friendly -->
+<title>Duty Attendance Message Generator</title>
+<style>
+    :root{
+      --card-bg: #f7f7f7;
+      --border: #d0d0d0;
+      --accent: #1976d2;
+      --radius: 8px;
+      --gap: 12px; /* default gap */
+      --compact-gap: 6px; /* used for tighter mobile spacing */
+      --control-bg-start: #ffffff;
+      --control-bg-end: #f0f6ff;
+      --control-border: rgba(25,118,210,0.15);
+      --control-text: #0b3d91;
+    }
+
+    html,body{height:100%;}
+    body {
+        font-family: Arial, sans-serif;
+        padding: 16px;
+        margin: 0;
+        background: #fff;
+        -webkit-font-smoothing: antialiased;
+        color: #222;
+        box-sizing: border-box;
+    }
+
+    .container {
+        max-width: 880px;
+        margin: 0 auto;
+    }
+
+    h1 { font-size:1.25rem; margin-bottom:10px; }
+    label strong { display:block; margin-bottom:6px; }
+
+    .controls {
+        display:flex;
+        gap: var(--gap);
+        align-items: center;
+        margin-bottom: 5px;
+        flex-wrap:wrap;
+    }
+    .controls > * { flex: 1 1 80px; min-width:120px; }
+
+    /* attractive controls for date & shift */
+    input[type="date"], select {
+        width:100%;
+        padding:10px 12px;
+        border:1px solid var(--control-border);
+        border-radius:10px;
+        font-size:1rem;
+        box-sizing:border-box;
+        background: linear-gradient(180deg, var(--control-bg-start), var(--control-bg-end));
+        color: var(--control-text);
+        outline: none;
+        transition: transform .12s ease, box-shadow .12s ease;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;
+    }
+    input[type="date"]:focus,
+    select:focus {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(25,118,210,0.12);
+    }
+    
+
+/* Basic styling for the new buttons */
+.status-toggle {
+    border: 1px solid #ccc;
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 1px 1px;
+    margin-right: 1px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
+    min-width: 12px;
+    text-align: center;
+}
+
+/* Styles for the selected/pressed state */
+/* Present (P) - Default to green/blue */
+.present-btn[aria-pressed="true"] {
+    background-color: #28a745; /* Green */
+    color: white;
+    border-color: #28a745;
+}
+
+/* Absent (A) - Default to red */
+.absent-btn[aria-pressed="true"] {
+    background-color: #dc3545; /* Red */
+    color: white;
+    border-color: #dc3545;
+}
+
+/* Week-Off (W) - Default to blue/orange */
+.weekoff-btn[aria-pressed="true"] {
+    background-color: #ffc107; /* Yellow/Orange */
+    color: #333;
+    border-color: #ffc107;
+}
+
+/* Adjustments for the label layout */
+.member {
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
+    cursor: pointer; /* Name is clickable now */
+}
+
+/* Remove default checkbox margin/visibility if needed, although JS hides it */
+.member input[type="checkbox"] {
+    display: none; 
+}
+</style>
+<style>
+/* 1. Base Button Styling */
+#genBtn {
+    /* Standard button styling */
+    padding: 10px 20px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: white; /* Text color */
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    overflow: hidden; /* Hide the gradient overflow */
+    position: relative; /* Needed for z-index and overflow */
+    z-index: 1; /* Keep the button content above the background */
+    
+    /* Ensure text is readable over the moving gradient */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.4); 
+}
+
+/* 2. Gradient Background Setup */
+#genBtn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400%; /* Make the gradient much wider than the button */
+    height: 100%;
+    z-index: -1; /* Place gradient behind the text */
+    border-radius: 8px; /* Match button border-radius */
+
+    /* The Rainbow Gradient */
+    background: linear-gradient(
+        90deg, 
+        #ff0000,   /* Red */
+        #ffa500,   /* Orange */
+        #ffff00,   /* Yellow */
+        #008000,   /* Green */
+        #0000ff,   /* Blue */
+        #4b0082,   /* Indigo */
+        #9400d3    /* Violet */
+    );
+    
+    /* Set initial background position (start the animation) */
+    background-size: 200% 100%; 
+    background-position: 0% 0%;
+
+    /* Apply the Animation */
+    animation: gradient-flow 10s linear infinite;
+}
+
+/* 3. Keyframes for the Animation */
+@keyframes gradient-flow {
+    0% {
+        background-position: 100% 0%; /* Start position */
+    }
+    100% {
+        background-position: 0% 0%; /* End position (moves from right to left) */
+    }
+}
+</style>
+
+
+
+</style>
+</head>
+<body>
+<div class="container">
+<h1>Finishing Area Attendance</h1>
+
+<div class="controls">
+  <div>
+    <label for="dutyDate"><strong>Select Date</strong></label>
+    <input type="date" id="dutyDate" aria-label="Duty date">
+  </div>
+
+  <div>
+    <label for="shift"><strong>Select Shift</strong></label>
+    <select id="shift" aria-label="Shift">
+        <option value="Day">Day</option>
+        <option value="Night">Night</option>
+    </select>
+  </div>
+</div>
+
+<hr>
+
+<!-- Sample Data – Replace with your actual names -->
+<div class="designation-grid">
+  <div class="designation-block" aria-labelledby="sup-heading">
+    <h2 id="sup-heading">Finishing Supervisor</h2>
+    <label class="member"><input type="checkbox" class="sup" value="Anab Khushal"></label>
+    <label class="member"><input type="checkbox" class="sup" value="Suleman Mansoor"></label>
+  </div>
+
+  <div class="designation-block" aria-labelledby="tech-heading">
+    <h2 id="tech-heading">Finishing Pulpit Operator</h2>
+    <label class="member"><input type="checkbox" class="tech" value="Rajkumar Chauhan"></label>
+    <label class="member"><input type="checkbox" class="tech" value="Aqib Ashiq"></label>
+    <label class="member"><input type="checkbox" class="tech" value="Pralhad Chauhan"></label>
+    <label class="member"><input type="checkbox" class="tech" value="Ahtasham Ul Haq"></label>
+    <label class="member"><input type="checkbox" class="tech" value="Murugan Vengadasalam"></label>
+    <label class="member"><input type="checkbox" class="tech" value="Viashal Yadav Savaru"></label>
+  </div>
+
+  <div class="designation-block" aria-labelledby="ops-heading">
+    <h2 id="ops-heading">Helpers</h2>
+    <label class="member"><input type="checkbox" class="ops" value="Tayyab Hussain"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Firoz Alam"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Abdallah Umar"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Shafiki Mugema"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Sulaiman Abdul Aziz Mutebi"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Jabbar Ahmed"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Muhammad Sajid Sher"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Muhammad Ali Hanif"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Rakesh Kumar Mangu Ram"></label>
+    <label class="member"><input type="checkbox" class="ops" value="MD Jilani Ansari"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Pradip Rajvanashi"></label>
+    <label class="member"><input type="checkbox" class="ops" value="MD Azad Ansari"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Mohd Afroz Ansari"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Parvez Ansari Ibrahim"></label>
+    <label class="member"><input type="checkbox" class="ops" value="MD Zeeshan Ansari"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Heera Lal Nageshvar"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Sandeep Kumar Sah"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Sabir Ansari Hamid"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Prabhu Kumar Ram"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Vinod Yadav Nagina"></label>
+    <label class="member"><input type="checkbox" class="ops" value="MD Manvar Khan"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Alamgir Shabir Ali"></label>
+    <label class="member"><input type="checkbox" class="ops" value="Mohammad Hasan Raza"></label>
+   
+    <label class="member"><input type="checkbox" class="ops" value="Mohammad Ataur Rahman"></label>
+  </div>
+</div>
+
+<div class="actions">
+    <button onclick="generateAndShare()" id="genBtn">Generate &amp; Share</button>
+</div>
+
+</div>
+
+<script>
+/* helper to gather present values for a class (present) */
+/* Fix: select the member labels with the .present class, then find the original checkbox input's value */
+/* helper to gather present values for a class (present) */
+function gather(group) {
+    // Selects ALL elements with class 'member' AND class 'present' (the <label> element)
+    // Then, looks for the nested input element that has the group class (e.g., .sup)
+    return Array.from(document.querySelectorAll(".member.present input." + group))
+                 .map(x => x.value);
+}
+
+/* format array as numbered list */
+function formatNumberedList(arr) {
+    return arr.map((v, i) => `${i + 1}. ${v}`).join("\n");
+}
+
+/* build the message text */
+function generateText() {
+    const date = document.getElementById("dutyDate").value || "";
+    const shift = document.getElementById("shift").value || "";
+
+    // These gather functions look for the 'present' members
+    const finishingSupervisors = gather("sup");
+    const operators = gather("tech");
+    const helpers = gather("ops");
+    
+    // These gather functions look for 'absent' and 'week-off' members
+    const absents = gatherStatus('.member.absent');
+    const weekOff = gatherStatus('.member.week-off');
+
+    let sections = [];
+
+    sections.push(`Finishing Area Attendance\nDate: ${date}\nShift: ${shift}`);
+
+    // If present people exist, list them under their roles
+    if (finishingSupervisors.length) {
+        sections.push(`Finishing Supervisor:\n${formatNumberedList(finishingSupervisors)}`);
+    }
+    if (operators.length) {
+        sections.push(`Finishing Pulpit Operator:\n${formatNumberedList(operators)}`);
+    }
+    if (helpers.length) {
+        sections.push(`Helpers:\n${formatNumberedList(helpers)}`);
+    }
+    
+    // Combine Absent and Week-Off for the final section
+    const combinedAbsents = [
+        ...absents.map(name => `${name} (Absent)`),
+        ...weekOff.map(name => `${name} (Week-Off)`),
+    ];
+
+    if (combinedAbsents.length) {
+        sections.push(`Absent / Week-Off:\n${formatNumberedList(combinedAbsents)}`);
+    }
+
+    return sections.join("\n\n").trim() || "";
+}
+
+/* generate the text and open native share sheet when available */
+async function generateAndShare() {
+    const text = generateText();
+    if (!text) {
+        alert("No selection made. Please select at least one person to share.");
+        return;
+    }
+
+    if (navigator.share) {
+        try {
+            await navigator.share({
+                title: 'Duty Attendance',
+                text
+            });
+        } catch (e) {
+            console.log('Share cancelled or failed', e);
+        }
+        return;
+    }
+
+    // fallback for devices/browsers without Web Share API
+    const useEmail = confirm("Sharing is not supported in this browser. Open email compose window? (Cancel to copy text to clipboard)");
+    if (useEmail) {
+        const mailto = `mailto:?subject=${encodeURIComponent('Duty Attendance')}&body=${encodeURIComponent(text)}`;
+        window.location.href = mailto;
+        return;
+    }
+
+    // final fallback: copy to clipboard
+    try {
+        await navigator.clipboard.writeText(text);
+        alert("Text copied to clipboard. Paste into your preferred app to share.");
+    } catch (e) {
+        alert("Unable to copy automatically. Please copy the text manually.");
+    }
+}
+
+/* gather names based on status class (label selector) */
+function gatherStatus(selector) {
+    return Array.from(document.querySelectorAll(selector + ' .member-name'))
+                 .map(s => s.textContent.trim());
+}
+
+/* add P/A/W buttons for every member row */
+function setupAbsentToggles() {
+    document.querySelectorAll('.member').forEach(lbl => {
+        // if already initialized, skip
+        if (lbl.dataset.initialized) return;
+        lbl.dataset.initialized = "1";
+
+        // find checkbox inside label
+        const inp = lbl.querySelector('input[type="checkbox"]');
+        if (!inp) return;
+
+        // use checkbox value as name text
+        const nameText = inp.value || "";
+        inp.style.display = 'none'; // Hide the original checkbox
+
+        // clear label contents and re-build: P/A/W toggle buttons, name span
+        lbl.innerHTML = "";
+        
+        // rebuild: append hidden checkbox
+        lbl.appendChild(inp);
+
+        // helper to create button
+        const createStatusButton = (text, statusClass, title) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = `status-toggle ${statusClass}`;
+            btn.innerText = text;
+            btn.title = title;
+            btn.setAttribute('aria-pressed', 'false');
+            return btn;
+        };
+
+        // Create status buttons
+        const presentBtn = createStatusButton('P', 'present-btn', 'Mark Present');
+        const absentBtn = createStatusButton('A', 'absent-btn', 'Mark Absent');
+        const weekOffBtn = createStatusButton('W', 'weekoff-btn', 'Mark Week-Off');
+
+        // name span
+        const span = document.createElement('span');
+        span.className = 'member-name';
+        span.style.marginLeft = '8px';
+        span.textContent = nameText;
+
+        // insert buttons then name
+        lbl.appendChild(presentBtn);
+        lbl.appendChild(absentBtn);
+        lbl.appendChild(weekOffBtn);
+        lbl.appendChild(span);
+
+        // Function to handle status toggle
+        const toggleStatus = (targetStatus) => {
+            // All possible status classes on the label
+            const allLabelStatuses = ['present', 'absent', 'week-off'];
+            // All status buttons
+            const allButtons = [presentBtn, absentBtn, weekOffBtn];
+            
+            // Current state of the label
+            const isCurrentlySet = lbl.classList.contains(targetStatus);
+            
+            // Clear all label statuses and button selections
+            allLabelStatuses.forEach(status => lbl.classList.remove(status));
+            allButtons.forEach(btn => btn.setAttribute('aria-pressed', 'false'));
+            
+            // Toggle the new status only if it was NOT already set
+            if (!isCurrentlySet) {
+                lbl.classList.add(targetStatus);
+                if (targetStatus === 'present') {
+                    presentBtn.setAttribute('aria-pressed', 'true');
+                    inp.checked = true; // Mark checkbox for 'present' gathering
+                } else if (targetStatus === 'absent') {
+                    absentBtn.setAttribute('aria-pressed', 'true');
+                    inp.checked = false;
+                } else if (targetStatus === 'week-off') {
+                    weekOffBtn.setAttribute('aria-pressed', 'true');
+                    inp.checked = false;
+                }
+            } else {
+                inp.checked = false; // Uncheck the checkbox when status is cleared
+            }
+        };
+
+        // Attach event listeners to buttons
+        presentBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleStatus('present');
+        });
+
+        absentBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleStatus('absent');
+        });
+
+        weekOffBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleStatus('week-off');
+        });
+        
+        // Also allow clicking the name span to toggle Present (for easier UX)
+        span.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            // If currently Present, un-mark it, otherwise mark Present
+            if (lbl.classList.contains('present')) {
+                toggleStatus(''); // Clears all status
+            } else {
+                toggleStatus('present');
+            }
+        });
+    });
+}
+
+/* set default date to today and initialize absent toggles */
+(function init(){
+    const d = document.getElementById("dutyDate");
+    const today = new Date().toISOString().slice(0,10);
+    if(!d.value) d.value = today;
+
+    // build the member items (insert toggles)
+    setupAbsentToggles();
+})();
+</script>
+
+</body>
+</html>
