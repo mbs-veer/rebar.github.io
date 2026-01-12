@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Rolling Mill – Pass Card Viewer</title>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f6f7fb;
+    margin: 16px;
+    color: #222;
+  }
+
+  h2 {
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  /* Responsive card grid */
+/* Stack cards vertically */
+#cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-start;   /* cards hug content */
+}
+
+
+  .stand-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 14px 14px 18px;
+    box-shadow:
+      0 1px 2px rgba(0,0,0,0.04),
+      0 10px 28px rgba(0,0,0,0.08);
+    width: fit-content;
+    max-width: 100%;
+  }
+
+  .stand-title {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  /* Horizontal swipe area */
+  .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    border-collapse: separate;
+    border-spacing: 8px 6px;
+    width: auto;
+  }
+
+  th, td {
+    padding: 8px 12px;
+    font-size: 13px;
+    text-align: center;
+    border-radius: 50px;
+    min-width: 54px;
+    white-space: nowrap;
+  }
+
+  th {
+    font-weight: 500;
+    color: #666;
+  }
+
+  /* Status coloring */
+  .status-NEW {
+    background: #e8f1ff;
+    color: #2b5fd9;
+  }
+
+  .status-ACTIVE {
+    background: #92ffbf;
+    color: #003416;
+    font-weight: 600;
+  }
+
+  .status-USED {
+    background: #f1f1f1;
+    color: #777;
+  }
+
+  .active-pass {
+    outline: 2px solid #111;
+    outline-offset: -2px;
+  }
+
+  /* Controls */
+  .controls {
+    margin: 14px 0 20px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .controls input,
+  .controls button {
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 12px;
+    border: 1px solid #ddd;
+  }
+
+  .controls button {
+    background: #111;
+    color: #fff;
+  }
+
+  /* Mobile fine-tuning */
+  @media (max-width: 640px) {
+    body {
+      margin: 12px;
+    }
+
+    .stand-card {
+      padding: 12px;
+    }
+
+    th, td {
+      min-width: 64px;
+      font-size: 14px;
+    }
+  }
+  @media (min-width: 900px) {
+  #cards {
+    align-items: center;
+  }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Pass Card Viewer & Tonnage Updater</h2>
+
+<input type="file" id="fileInput" accept=".xlsx,.xls">
+
+<div class="controls">
+  
+  <input type="number" id="tonnageInput" step="0.01" placeholder="Add Tonnage (MT)">
+  <button onclick="updateTonnage()">Update Active Pass</button>
+  <button onclick="exportExcel()">Export Excel</button>
+</div>
+
+<div id="cards"></div>
+
+
+
+
+
+
+
+
+<script>
+let rows = [];
+
+document.getElementById("fileInput").addEventListener("change", loadExcel);
+
+function loadExcel(e) {
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const wb = XLSX.read(new Uint8Array(evt.target.result), { type: "array" });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+    renderCards();
+  };
+  reader.readAsArrayBuffer(e.target.files[0]);
+}
+
+function getActivePass(statusRow) {
+  for (let p = 1; p <= 20; p++) {
+    if (String(statusRow["P" + p]).toUpperCase() === "ACTIVE") {
+      return p;
+    }
+  }
+  return null;
+}
+
+
+function renderCards() {
+  const container = document.getElementById("cards");
+  container.innerHTML = "";
+
+  for (let i = 0; i < rows.length; i += 2) {
+    const statusRow = rows[i];
+    const tonRow = rows[i + 1];
+
+    if (!tonRow || tonRow["Stand Status"] !== "Active") continue;
+
+    const visiblePasses = [];
+    let activePass = null;
+
+    for (let p = 1; p <= 20; p++) {
+      const status = statusRow["P" + p];
+      if (status !== "") {
+        visiblePasses.push({ p, status });
+        if (String(status).toUpperCase() === "ACTIVE") {
+          activePass = p;
+        }
+      }
+    }
+
+    if (visiblePasses.length === 0) continue;
+
+    let html = `<div class="stand-card">
+      <div class="stand-title">Stand ${tonRow.Stand}</div>
+      <table>
+        <tr><th></th>`;
+
+    /* HEADER */
+    visiblePasses.forEach(obj => {
+      html += `<th>P${obj.p}</th>`;
+    });
+    html += "</tr>";
+
+    /* TONNAGE ROW (colored by status) */
+    html += "<tr><td><b>Tonnage</b></td>";
+    visiblePasses.forEach(obj => {
+      const ap = obj.p === activePass ? "active-pass" : "";
+      const cls = "status-" + obj.status;
+      html += `<td class="${cls} ${ap}">${tonRow["P" + obj.p] || ""}</td>`;
+    });
+    html += "</tr>";
+
+    html += "</table></div>";
+    container.innerHTML += html;
+  }
+}
+
+
+
+
+function updateTonnage() {
+  const ton = Number(document.getElementById("tonnageInput").value);
+  if (!ton || ton <= 0) return alert("Enter valid tonnage");
+
+  for (let i = 0; i < rows.length; i += 2) {
+    const statusRow = rows[i];
+    const tonRow = rows[i + 1];
+
+    if (!tonRow || tonRow["Stand Status"] !== "Active") continue;
+
+    const activePass = getActivePass(statusRow);
+    if (!activePass) continue;
+
+    const key = "P" + activePass;
+    tonRow[key] = (Number(tonRow[key]) || 0) + ton;
+  }
+
+  renderCards();
+}
+
+function exportExcel() {
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Pass_Cards");
+  XLSX.writeFile(wb, "Roll_Tonnage_Updated.xlsx");
+}
+</script>
+
+
+</body>
+</html>
