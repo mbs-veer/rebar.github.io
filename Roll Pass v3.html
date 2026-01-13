@@ -1,276 +1,380 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Rolling Mill – Pass Card Viewer</title>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta charset="UTF-8">
+<title>Rolling Mill – Pass Card Viewer</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
-  body {
-    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #f6f7fb;
-    margin: 16px;
-    color: #222;
-  }
-
-  h2 {
-    font-weight: 600;
-    margin-bottom: 14px;
-  }
-
-  /* Responsive card grid */
-/* Stack cards vertically */
-#cards {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  align-items: flex-start;   /* cards hug content */
+body{
+  font-family:Inter,system-ui;
+  background:#f6f7fb;
+  margin:16px;
 }
-
-
-  .stand-card {
-    background: #fff;
-    border-radius: 16px;
-    padding: 14px 14px 18px;
-    box-shadow:
-      0 1px 2px rgba(0,0,0,0.04),
-      0 10px 28px rgba(0,0,0,0.08);
-    width: fit-content;
-    max-width: 100%;
-  }
-
-  .stand-title {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 8px;
-  }
-
-  /* Horizontal swipe area */
-  .table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  table {
-    border-collapse: separate;
-    border-spacing: 8px 6px;
-    width: auto;
-  }
-
-  th, td {
-    padding: 8px 12px;
-    font-size: 13px;
-    text-align: center;
-    border-radius: 50px;
-    min-width: 54px;
-    white-space: nowrap;
-  }
-
-  th {
-    font-weight: 500;
-    color: #666;
-  }
-
-  /* Status coloring */
-  .status-NEW {
-    background: #e8f1ff;
-    color: #2b5fd9;
-  }
-
-  .status-ACTIVE {
-    background: #92ffbf;
-    color: #003416;
-    font-weight: 600;
-  }
-
-  .status-USED {
-    background: #f1f1f1;
-    color: #777;
-  }
-
-  .active-pass {
-    outline: 2px solid #111;
-    outline-offset: -2px;
-  }
-
-  /* Controls */
-  .controls {
-    margin: 14px 0 20px;
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .controls input,
-  .controls button {
-    padding: 10px 14px;
-    font-size: 14px;
-    border-radius: 12px;
-    border: 1px solid #ddd;
-  }
-
-  .controls button {
-    background: #111;
-    color: #fff;
-  }
-
-  /* Mobile fine-tuning */
-  @media (max-width: 640px) {
-    body {
-      margin: 12px;
-    }
-
-    .stand-card {
-      padding: 12px;
-    }
-
-    th, td {
-      min-width: 64px;
-      font-size: 14px;
-    }
-  }
-  @media (min-width: 900px) {
-  #cards {
-    align-items: center;
-  }
+#cards{
+  display:flex;
+  flex-direction:column;
+  gap:16px;
 }
+.stand-card{
+  background:#fff;
+  border-radius:16px;
+  padding:14px;
+  box-shadow:0 10px 28px rgba(0,0,0,.08);
+  width:fit-content;
+}
+.stand-title{
+  font-weight:600;
+  display:flex;
+  justify-content:space-between;
+}
+.card-controls button{
+  font-size:12px;
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid #ddd;
+  cursor:pointer;
+}
+.card-info{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:8px 0 10px;
+}
+.card-info div{
+  font-size:13px;
+  background:#f2f3f6;
+  padding:6px 10px;
+  border-radius:20px;
+}
+.card-info input{
+  font-size:13px;
+  padding:6px 8px;
+  border-radius:8px;
+  border:1px solid #ddd;
+}
+table{
+  border-collapse:separate;
+  border-spacing:8px 6px;
+}
+th,td{
+  padding:8px 12px;
+  border-radius:50px;
+  text-align:center;
+}
+.status-ACTIVE{background:#92ffbf;font-weight:600;}
+.status-USED{background:#ffb3b3;font-weight:600;}
+.status-NEW{background:#e8f1ff;}
+.active-pass{outline:2px solid #111;}
 
+/* Stand selector */
+.stand-control-card{background:#fff;border-radius:12px;padding:8px 12px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stand-toggle-btn{padding:6px 8px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px}
+.stand-toggle-btn.active{background:#92ffbf;border-color:#2f9a4a;font-weight:600}
+
+.controls{margin:12px 0;display:flex;gap:8px;align-items:center}
+.controls input{padding:8px;border-radius:8px;border:1px solid #ddd}
+.controls button{padding:8px 10px;border-radius:8px;border:1px solid #ddd;cursor:pointer}
 </style>
-
 </head>
 
 <body>
 
-<h2>Pass Card Viewer & Tonnage Updater</h2>
-
-<input type="file" id="fileInput" accept=".xlsx,.xls">
+<h2>Pass Card Viewer</h2>
+<input type="file" id="fileInput">
 
 <div class="controls">
-  
   <input type="number" id="tonnageInput" step="0.01" placeholder="Add Tonnage (MT)">
-  <button onclick="updateTonnage()">Update Active Pass</button>
-  <button onclick="exportExcel()">Export Excel</button>
+  <button id="updateTonnageBtn">Update Active Pass</button>
+  <button id="exportBtn">Export Excel</button>
 </div>
+
+<div id="meta-card" style="background:#fff;padding:8px;border-radius:8px;margin:8px 0;box-shadow:0 1px 2px rgba(0,0,0,.04);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+  <label style="display:flex;align-items:center;gap:6px;">Updated Date:<input id="meta-date" type="date" style="padding:6px;border:1px solid #ddd;border-radius:6px"></label>
+  <label style="display:flex;align-items:center;gap:6px">Shift:<select id="meta-shift" style="padding:6px;border:1px solid #ddd;border-radius:6px"><option value="D">D</option><option value="N">N</option></select></label>
+  <label style="display:flex;align-items:center;gap:6px">Billet No:<input id="meta-billet" type="number" min="1" max="999" style="padding:6px;border:1px solid #ddd;border-radius:6px;width:90px"></label>
+  <button id="meta-save" style="padding:6px 10px;border-radius:6px">Save</button>
+  <div id="meta-display" style="margin-left:auto;font-weight:600">Updated UpTo: —</div>
+</div>
+
+<!-- Stand selector card (A,B,1..18) -->
+<div id="stand-controls" class="stand-control-card"></div>
 
 <div id="cards"></div>
 
-
-
-
-
-
-
-
 <script>
-let rows = [];
+let rows=[];
+let editingCards=new Set();
+const defaultStands=['A','B',...Array.from({length:18},(_,i)=>String(i+1))];
 
-document.getElementById("fileInput").addEventListener("change", loadExcel);
+// wire file input and control buttons
+document.getElementById('fileInput').addEventListener('change', loadExcel);
+document.getElementById('updateTonnageBtn').addEventListener('click', updateTonnage);
+document.getElementById('exportBtn').addEventListener('click', exportExcel);
 
-function loadExcel(e) {
-  const reader = new FileReader();
-  reader.onload = evt => {
-    const wb = XLSX.read(new Uint8Array(evt.target.result), { type: "array" });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-    renderCards();
-  };
-  reader.readAsArrayBuffer(e.target.files[0]);
+init();
+
+function init(){
+  defaultStands.forEach(st=>{
+    const s={
+      Stand:st,
+      'Stand Status':'',
+      'Top Roll ID':'',
+      'Bottom Roll ID':'',
+      'Roll Dia':'',
+      'Roll Material':''
+    };
+    const t={Stand:st,'Stand Status':'Active'};
+    for(let p=1;p<=20;p++){s['P'+p]='';t['P'+p]='';s['GP'+p]='';}
+    rows.push(s,t);
+  });
+  renderStandControls();
+  render();
+  // init meta handlers
+  initMetaHandlers();
 }
 
-function getActivePass(statusRow) {
-  for (let p = 1; p <= 20; p++) {
-    if (String(statusRow["P" + p]).toUpperCase() === "ACTIVE") {
-      return p;
-    }
+function setMetaInputs(date, shift, billet){
+  const d = document.getElementById('meta-date');
+  const s = document.getElementById('meta-shift');
+  const b = document.getElementById('meta-billet');
+  const disp = document.getElementById('meta-display');
+  if(d) d.value = date || '';
+  if(s) s.value = shift || 'D';
+  if(b) b.value = billet || '';
+  if(date && shift && billet){
+    const billetP = String(billet).padStart(3,'0');
+    if(disp) disp.textContent = 'Updated UpTo: '+`${date}-${shift}-${billetP}`;
+  }else{
+    if(disp) disp.textContent = 'Updated UpTo: —';
   }
-  return null;
 }
 
+function getMetaInputs(){
+  const d = document.getElementById('meta-date');
+  const s = document.getElementById('meta-shift');
+  const b = document.getElementById('meta-billet');
+  return { date: d?String(d.value||''):'', shift: s?String(s.value||''):'', billet: b?String(b.value||''):'' };
+}
 
-function renderCards() {
-  const container = document.getElementById("cards");
-  container.innerHTML = "";
+function initMetaHandlers(){
+  const d = document.getElementById('meta-date');
+  const s = document.getElementById('meta-shift');
+  const b = document.getElementById('meta-billet');
+  const save = document.getElementById('meta-save');
+  const disp = document.getElementById('meta-display');
+  function refresh(){
+    const {date,shift,billet} = getMetaInputs();
+    if(date && shift && billet){ const billetP=String(billet).padStart(3,'0'); if(disp) disp.textContent='Updated UpTo: '+`${date}-${shift}-${billetP}`; }
+    else if(disp) disp.textContent='Updated UpTo: —';
+  }
+  if(d) d.addEventListener('change', refresh);
+  if(s) s.addEventListener('change', refresh);
+  if(b) b.addEventListener('change', refresh);
+  if(save) save.addEventListener('click', ()=>{
+    const {date,shift,billet} = getMetaInputs();
+    if(!date){ alert('Enter valid date'); return; }
+    if(!/^[DN]$/.test(shift)) { alert('Shift must be D or N'); return; }
+    if(!/^[0-9]{1,3}$/.test(billet)) { alert('Billet must be 1-3 digits'); return; }
+    refresh(); alert('Metadata updated');
+  });
+}
 
-  for (let i = 0; i < rows.length; i += 2) {
-    const statusRow = rows[i];
-    const tonRow = rows[i + 1];
+function findStandIndex(stand){
+  for(let i=0;i<rows.length;i+=2) if(String(rows[i]['Stand']||'').trim()===String(stand)) return i;
+  return -1;
+}
 
-    if (!tonRow || tonRow["Stand Status"] !== "Active") continue;
+function ensureStandExists(stand){
+  const idx=findStandIndex(stand);
+  if(idx!==-1){ rows[idx]['Stand']=String(stand); rows[idx+1]['Stand']=String(stand); return idx; }
+  const s={Stand:stand,'Stand Status':'','Top Roll ID':'','Bottom Roll ID':'','Roll Dia':'','Roll Material':''};
+  const t={Stand:stand,'Stand Status':''};
+  for(let p=1;p<=20;p++){s['P'+p]='';t['P'+p]='';}
+  rows.push(s); rows.push(t);
+  return rows.length-2;
+}
 
-    const visiblePasses = [];
-    let activePass = null;
+function toggleStand(stand){
+  const idx=ensureStandExists(stand);
+  const ton = rows[idx+1];
+  ton['Stand Status']= (ton['Stand Status']==='Active')? '' : 'Active';
+  renderStandControls(); render();
+}
 
-    for (let p = 1; p <= 20; p++) {
-      const status = statusRow["P" + p];
-      if (status !== "") {
-        visiblePasses.push({ p, status });
-        if (String(status).toUpperCase() === "ACTIVE") {
-          activePass = p;
-        }
+function renderStandControls(){
+  const div=document.getElementById('stand-controls');
+  const list=defaultStands.slice();
+  let html='<strong>Active Stands:</strong> ';
+  list.forEach(st=>{ const idx=findStandIndex(st); const isActive=(idx!==-1 && rows[idx+1]['Stand Status']==='Active'); html+=`<button class="stand-toggle-btn ${isActive?'active':''}" onclick="toggleStand('${st}')">${st}</button>`});
+  div.innerHTML=html;
+}
+
+function loadExcel(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array' });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(sheet, { defval:'' });
+
+    // Detect meta row at the top (Updated Date / Shift / Billet No or legacy Updated UpTo)
+    if(raw.length && (raw[0]['Updated Date'] || raw[0]['Shift'] || raw[0]['Billet No'] || raw[0]['Updated UpTo'] || String(raw[0]['Stand Status']||'').toLowerCase()==='meta')){
+      let dateVal = raw[0]['Updated Date'] || '';
+      let shiftVal = raw[0]['Shift'] || '';
+      let billetVal = raw[0]['Billet No'] || '';
+      if(!dateVal && raw[0]['Updated UpTo']){
+        const parts = String(raw[0]['Updated UpTo']).split('-');
+        if(parts.length>=4){ dateVal = parts.slice(0,3).join('-'); shiftVal = parts[3]||''; billetVal = parts[4]||''; }
+      }
+      setMetaInputs(dateVal, shiftVal, billetVal);
+      raw.shift();
+    } else {
+      // try to parse from filename Roll_Pass_YYYY-MM-DD-X-NNN
+      const m = (file.name||'').match(/(\d{4}-\d{2}-\d{2}-[A-Za-z0-9]-\d{3})/);
+      if(m && m[1]){
+        const parts = m[1].split('-');
+        setMetaInputs(parts.slice(0,3).join('-'), parts[3]||'', parts[4]||'');
       }
     }
 
-    if (visiblePasses.length === 0) continue;
+    // Simple normalization: expect groove/status/ton rows grouped by Stand
+    const groups={}; const order=[];
+    raw.forEach(r=>{ const stand=String(r['Stand']||r['Stand Number']||'').trim(); if(!stand) return; if(!groups[stand]){groups[stand]={}; order.push(stand);} const ss=String(r['Stand Status']||'').toLowerCase(); if(ss==='groove profile'){ groups[stand].groove=r; } else { let hasNum=false; for(let p=1;p<=20;p++){ const v=r['P'+p]; if((typeof v==='number' && !isNaN(v)) || (String(v||'').trim()!=='' && !isNaN(Number(String(v).toString().replace(/,/g,''))))) { hasNum=true; break; } } if(ss==='active' || hasNum || ss.includes('tonn')) groups[stand].ton=r; else groups[stand].status=r; }});
+    const normalized=[]; order.forEach(st=>{ const e=groups[st]; const statusRow=e.status||{}; const tonRow=e.ton||{}; statusRow['Stand']=statusRow['Stand']||tonRow['Stand']||st; tonRow['Stand']=tonRow['Stand']||statusRow['Stand']||st; if(e.groove){ for(let p=1;p<=20;p++) statusRow['GP'+p]=String(e.groove['P'+p]||''); } statusRow['Stand Status']=statusRow['Stand Status']||''; normalized.push(statusRow); normalized.push(tonRow); });
+    if(normalized.length>0){ rows=normalized; }
+    renderStandControls(); render();
+  };
+  reader.readAsArrayBuffer(file);
+}
 
-    let html = `<div class="stand-card">
-      <div class="stand-title">Stand ${tonRow.Stand}</div>
-      <table>
-        <tr><th></th>`;
+function exportExcel(){
+  const newRows=[];
+  // collect data rows
+  for(let i=0;i<rows.length;i+=2){
+    const s=rows[i]; const t=rows[i+1]; const stand=s['Stand']||t['Stand']||''; s['Stand']=stand; if(t) t['Stand']=stand;
+    const groove={Stand:stand,'Stand Status':'Groove Profile'};
+    for(let p=1;p<=20;p++) groove['P'+p]=String(s['GP'+p]||'');
+    newRows.push(groove); newRows.push(s); if(t) newRows.push(t);
+  }
 
-    /* HEADER */
-    visiblePasses.forEach(obj => {
-      html += `<th>P${obj.p}</th>`;
-    });
-    html += "</tr>";
+  // meta row from top inputs (if provided)
+  const md = document.getElementById('meta-date');
+  const ms = document.getElementById('meta-shift');
+  const mb = document.getElementById('meta-billet');
+  let filename='Roll_Tonnage_Export.xlsx';
+  if(md && ms && mb && md.value && ms.value && mb.value){
+    const billetP = String(mb.value).padStart(3,'0');
+    const meta = { 'Updated Date': md.value, 'Shift': ms.value, 'Billet No': mb.value, 'Updated UpTo': `${md.value}-${ms.value}-${billetP}`, 'Stand Status':'Meta' };
+    newRows.unshift(meta);
+    filename = `Roll_Pass_${meta['Updated UpTo']}.xlsx`;
+    const disp = document.getElementById('meta-display'); if(disp) disp.textContent = 'Updated UpTo: '+meta['Updated UpTo'];
+  }
 
-    /* TONNAGE ROW (colored by status) */
-    html += "<tr><td><b>Tonnage</b></td>";
-    visiblePasses.forEach(obj => {
-      const ap = obj.p === activePass ? "active-pass" : "";
-      const cls = "status-" + obj.status;
-      html += `<td class="${cls} ${ap}">${tonRow["P" + obj.p] || ""}</td>`;
-    });
-    html += "</tr>";
+  const ws=XLSX.utils.json_to_sheet(newRows); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Pass_Cards'); XLSX.writeFile(wb,filename);
+}
 
-    html += "</table></div>";
-    container.innerHTML += html;
+function updateTonnage(){ const ton=Number(document.getElementById('tonnageInput').value); if(!ton||ton<=0) return alert('Enter valid tonnage'); for(let i=0;i<rows.length;i+=2){ const s=rows[i]; const t=rows[i+1]; if(!t||t['Stand Status']!=='Active') continue; let active=null; for(let p=1;p<=20;p++) if(String(s['P'+p]).toUpperCase()==='ACTIVE'){ active=p; break; } if(!active) continue; t['P'+active]=(Number(t['P'+active])||0)+ton; } render(); }
+
+
+function render(){
+  const c=document.getElementById('cards');
+  c.innerHTML='';
+  for(let i=0;i<rows.length;i+=2){
+    const s=rows[i],t=rows[i+1];
+    if(t['Stand Status']!=='Active')continue;
+    const edit=editingCards.has(i);
+
+    let html=`<div class="stand-card">
+      <div class="stand-title">
+        Stand ${s.Stand}
+        <span class="card-controls">
+          ${edit
+            ?`<button onclick="save(${i})">Save</button>
+               <button onclick="cancel(${i})">Cancel</button>`
+            :`<button onclick="edit(${i})">Edit</button>`}
+        </span>
+      </div>`;
+
+    if(edit){
+      html+=`
+      <div class="card-info">
+        <input id="top-${i}" placeholder="Top Roll ID" value="${s['Top Roll ID']}">
+        <input id="bottom-${i}" placeholder="Bottom Roll ID" value="${s['Bottom Roll ID']}">
+        <input id="dia-${i}" placeholder="Roll Dia" value="${s['Roll Dia']}">
+        <input id="mat-${i}" placeholder="Roll Material" value="${s['Roll Material']}">
+      </div>`;
+    }else{
+      html+=`
+      <div class="card-info">
+        <div>Top: ${s['Top Roll ID']||'—'}</div>
+        <div>Bottom: ${s['Bottom Roll ID']||'—'}</div>
+        <div>Dia: ${s['Roll Dia']||'—'}</div>
+        <div>Material: ${s['Roll Material']||'—'}</div>
+      </div>`;
+    }
+
+    html+=`<table><tr><th></th>`;
+    for(let p=1;p<=20;p++)html+=`<th>P${p}</th>`;
+    html+=`</tr><tr><td>Groove</td>`;
+    for(let p=1;p<=20;p++){
+      const gp = s['GP'+p]||'';
+      if(edit){
+        html+=`<td><input id="gp-${i}-${p}" value="${gp}"></td>`;
+      }else{
+        html+=`<td>${gp}</td>`;
+      }
+    }
+    if(edit){
+      html+=`</tr><tr><td>Status</td>`;
+      for(let p=1;p<=20;p++){
+        const v=s['P'+p]||'';
+        html+=`<td>
+          <select id="st-${i}-${p}">
+            <option></option>
+            <option ${v==='NEW'?'selected':''}>NEW</option>
+            <option ${v==='ACTIVE'?'selected':''}>ACTIVE</option>
+            <option ${v==='USED'?'selected':''}>USED</option>
+          </select></td>`;
+      }
+    }
+    html+=`</tr><tr><td>Tonnage</td>`;
+    for(let p=1;p<=20;p++){
+      const v=String(s['P'+p]||'').toUpperCase();
+      const statusCls = v?`status-${v}`:'';
+      const ap = v==='ACTIVE' ? 'active-pass' : '';
+      if(edit){
+        html+=`<td class="${ap}"><input type="number" id="ton-${i}-${p}" value="${t['P'+p]}"></td>`;
+      }else{
+        html+=`<td class="${statusCls}">${t['P'+p]}</td>`;
+      }
+    }
+    html+=`</tr></table></div>`;
+    c.innerHTML+=html;
   }
 }
 
+function edit(i){editingCards.add(i);render();}
+function cancel(i){editingCards.delete(i);render();}
+function save(i){
+  const s=rows[i],t=rows[i+1];
+  s['Top Roll ID']=document.getElementById(`top-${i}`).value;
+  s['Bottom Roll ID']=document.getElementById(`bottom-${i}`).value;
+  s['Roll Dia']=document.getElementById(`dia-${i}`).value;
+  s['Roll Material']=document.getElementById(`mat-${i}`).value;
 
-
-
-function updateTonnage() {
-  const ton = Number(document.getElementById("tonnageInput").value);
-  if (!ton || ton <= 0) return alert("Enter valid tonnage");
-
-  for (let i = 0; i < rows.length; i += 2) {
-    const statusRow = rows[i];
-    const tonRow = rows[i + 1];
-
-    if (!tonRow || tonRow["Stand Status"] !== "Active") continue;
-
-    const activePass = getActivePass(statusRow);
-    if (!activePass) continue;
-
-    const key = "P" + activePass;
-    tonRow[key] = (Number(tonRow[key]) || 0) + ton;
+  for(let p=1;p<=20;p++){
+    s['GP'+p]=document.getElementById(`gp-${i}-${p}`).value||'';
+    s['P'+p]=document.getElementById(`st-${i}-${p}`).value.toUpperCase();
+    t['P'+p]=Number(document.getElementById(`ton-${i}-${p}`).value)||'';
   }
-
-  renderCards();
-}
-
-function exportExcel() {
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Pass_Cards");
-  XLSX.writeFile(wb, "Roll_Tonnage_Updated.xlsx");
+  editingCards.delete(i);
+  render();
 }
 </script>
-
-
 </body>
 </html>
