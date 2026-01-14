@@ -83,20 +83,26 @@ th,td{
 
 <body>
 
-<h2>Pass Card Viewer</h2>
+<h2>Pass Card Viewer/Editor</h2>
 <input type="file" id="fileInput">
 
 <div class="controls">
   <input type="number" id="tonnageInput" step="0.01" placeholder="Add Tonnage (MT)">
   <button id="updateTonnageBtn">Update Active Pass</button>
   <button id="exportBtn">Export Excel</button>
+  <button id="clearBtn" style="background:#ffe3e3;border-color:#ff9b9b">
+  Clear All Data
+</button>
+
 </div>
 
 <div id="meta-card" style="background:#fff;padding:8px;border-radius:8px;margin:8px 0;box-shadow:0 1px 2px rgba(0,0,0,.04);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
   <label style="display:flex;align-items:center;gap:6px;">Updated Date:<input id="meta-date" type="date" style="padding:6px;border:1px solid #ddd;border-radius:6px"></label>
   <label style="display:flex;align-items:center;gap:6px">Shift:<select id="meta-shift" style="padding:6px;border:1px solid #ddd;border-radius:6px"><option value="D">D</option><option value="N">N</option></select></label>
   <label style="display:flex;align-items:center;gap:6px">Billet No:<input id="meta-billet" type="number" min="1" max="999" style="padding:6px;border:1px solid #ddd;border-radius:6px;width:90px"></label>
-  <button id="meta-save" style="padding:6px 10px;border-radius:6px">Save</button>
+  <button id="meta-save" style="padding:6px 10px; border-radius:8px;
+  border:1px solid #ddd;
+  cursor:pointer">Save</button>
   <div id="meta-display" style="margin-left:auto;font-weight:600">Updated UpTo: —</div>
 </div>
 
@@ -106,6 +112,35 @@ th,td{
 <div id="cards"></div>
 
 <script>
+  const STORAGE_KEY = 'roll_pass_autosave_v1';
+
+function saveState(){
+  const meta = getMetaInputs();
+  const state = {
+    rows,
+    meta,
+    editing:[...editingCards]
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function loadState(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw) return false;
+  try{
+    const state = JSON.parse(raw);
+    if(state.rows){
+      rows = state.rows;
+      editingCards = new Set(state.editing || []);
+      setMetaInputs(state.meta?.date, state.meta?.shift, state.meta?.billet);
+      return true;
+    }
+  }catch(e){
+    console.warn('Autosave corrupted, ignoring');
+  }
+  return false;
+}
+
 let rows=[];
 let editingCards=new Set();
 const defaultStands=['A','B',...Array.from({length:18},(_,i)=>String(i+1))];
@@ -114,26 +149,29 @@ const defaultStands=['A','B',...Array.from({length:18},(_,i)=>String(i+1))];
 document.getElementById('fileInput').addEventListener('change', loadExcel);
 document.getElementById('updateTonnageBtn').addEventListener('click', updateTonnage);
 document.getElementById('exportBtn').addEventListener('click', exportExcel);
+document.getElementById('clearBtn').addEventListener('click', clearAllData);
+
+
 
 init();
 
 function init(){
+  if(loadState()){
+    renderStandControls();
+    render();
+    initMetaHandlers();
+    return;
+  }
+
+  // existing default init
   defaultStands.forEach(st=>{
-    const s={
-      Stand:st,
-      'Stand Status':'',
-      'Top Roll ID':'',
-      'Bottom Roll ID':'',
-      'Roll Dia':'',
-      'Roll Material':''
-    };
+    const s={Stand:st,'Stand Status':'','Top Roll ID':'','Bottom Roll ID':'','Roll Dia':'','Roll Material':''};
     const t={Stand:st,'Stand Status':'Active'};
     for(let p=1;p<=20;p++){s['P'+p]='';t['P'+p]='';s['GP'+p]='';}
     rows.push(s,t);
   });
   renderStandControls();
   render();
-  // init meta handlers
   initMetaHandlers();
 }
 
@@ -201,14 +239,14 @@ function ensureStandExists(stand){
 function toggleStand(stand){
   const idx=ensureStandExists(stand);
   const ton = rows[idx+1];
-  ton['Stand Status']= (ton['Stand Status']==='Active')? '' : 'Active';
+  ton['Stand Status']= (ton['Stand Status']==='Active')? '' : 'Active';saveState();
   renderStandControls(); render();
 }
 
 function renderStandControls(){
   const div=document.getElementById('stand-controls');
   const list=defaultStands.slice();
-  let html='<strong>Active Stands:</strong> ';
+  let html='<strong>Active Stands</strong> ';
   list.forEach(st=>{ const idx=findStandIndex(st); const isActive=(idx!==-1 && rows[idx+1]['Stand Status']==='Active'); html+=`<button class="stand-toggle-btn ${isActive?'active':''}" onclick="toggleStand('${st}')">${st}</button>`});
   div.innerHTML=html;
 }
@@ -249,7 +287,7 @@ function loadExcel(e){
     if(normalized.length>0){ rows=normalized; }
     renderStandControls(); render();
   };
-  reader.readAsArrayBuffer(file);
+  reader.readAsArrayBuffer(file);saveState();
 }
 
 function exportExcel(){
@@ -275,10 +313,11 @@ function exportExcel(){
     const disp = document.getElementById('meta-display'); if(disp) disp.textContent = 'Updated UpTo: '+meta['Updated UpTo'];
   }
 
-  const ws=XLSX.utils.json_to_sheet(newRows); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Pass_Cards'); XLSX.writeFile(wb,filename);
+  const ws=XLSX.utils.json_to_sheet(newRows); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Pass_Cards'); XLSX.writeFile(wb,filename);localStorage.removeItem(STORAGE_KEY);
+
 }
 
-function updateTonnage(){ const ton=Number(document.getElementById('tonnageInput').value); if(!ton||ton<=0) return alert('Enter valid tonnage'); for(let i=0;i<rows.length;i+=2){ const s=rows[i]; const t=rows[i+1]; if(!t||t['Stand Status']!=='Active') continue; let active=null; for(let p=1;p<=20;p++) if(String(s['P'+p]).toUpperCase()==='ACTIVE'){ active=p; break; } if(!active) continue; t['P'+active]=(Number(t['P'+active])||0)+ton; } render(); }
+function updateTonnage(){ const ton=Number(document.getElementById('tonnageInput').value); if(!ton||ton<=0) return alert('Enter valid tonnage'); for(let i=0;i<rows.length;i+=2){ const s=rows[i]; const t=rows[i+1]; if(!t||t['Stand Status']!=='Active') continue; let active=null; for(let p=1;p<=20;p++) if(String(s['P'+p]).toUpperCase()==='ACTIVE'){ active=p; break; } if(!active) continue; t['P'+active]=(Number(t['P'+active])||0)+ton; } saveState();render(); }
 
 
 function render(){
@@ -372,9 +411,51 @@ function save(i){
     s['P'+p]=document.getElementById(`st-${i}-${p}`).value.toUpperCase();
     t['P'+p]=Number(document.getElementById(`ton-${i}-${p}`).value)||'';
   }
-  editingCards.delete(i);
+  editingCards.delete(i);saveState();
   render();
 }
+
+window.addEventListener('beforeunload', e=>{
+  saveState();
+  e.preventDefault();
+  e.returnValue = '';
+});
+
+function clearAllData(){
+  const ok = confirm(
+    'This will CLEAR all pass cards, tonnage, and metadata.\n\n' +
+    'This action CANNOT be undone.\n\nProceed?'
+  );
+  if(!ok) return;
+
+  // clear persistence
+  localStorage.removeItem(STORAGE_KEY);
+
+  // reset runtime state
+  rows = [];
+  editingCards.clear();
+
+  // reset meta inputs
+  setMetaInputs('', 'D', '');
+
+  // re-init default structure
+  defaultStands.forEach(st=>{
+    const s={Stand:st,'Stand Status':'','Top Roll ID':'','Bottom Roll ID':'','Roll Dia':'','Roll Material':''};
+    const t={Stand:st,'Stand Status':'Active'};
+    for(let p=1;p<=20;p++){
+      s['P'+p]='';
+      t['P'+p]='';
+      s['GP'+p]='';
+    }
+    rows.push(s,t);
+  });
+
+  renderStandControls();
+  render();
+
+  alert('All data cleared. Fresh pass card loaded.');
+}
+
 </script>
 </body>
 </html>
