@@ -10,8 +10,8 @@
 
 <style>
 body{
-  font-family:Inter,system-ui;
-  background:#f6f7fb;
+  font-family:roboto,system-ui;
+  background:#ebefff;
   margin:16px;
 }
 #cards{
@@ -34,7 +34,7 @@ body{
 .card-controls button{
   font-size:12px;
   padding:6px 8px;
-  border-radius:8px;
+  border-radius:20px;
   border:1px solid #ddd;
   cursor:pointer;
 }
@@ -77,7 +77,7 @@ th,td{
 
 .controls{margin:12px 0;display:flex;gap:8px;align-items:center}
 .controls input{padding:8px;border-radius:8px;border:1px solid #ddd}
-.controls button{padding:8px 10px;border-radius:8px;border:1px solid #ddd;cursor:pointer}
+.controls button{padding:8px 10px;border-radius:20px;border:1px solid #ddd;cursor:pointer}
 </style>
 </head>
 
@@ -90,7 +90,7 @@ th,td{
   <input type="number" id="tonnageInput" step="0.01" placeholder="Add Tonnage (MT)">
   <button id="updateTonnageBtn">Update Active Pass</button>
   <button id="exportBtn">Export Excel</button>
-  <button id="clearBtn" style="background:#ffe3e3;border-color:#ff9b9b">
+  <button id="clearBtn" style="background:#FF5A5F;color: white;">
   Clear All Data
 </button>
 
@@ -100,8 +100,8 @@ th,td{
   <label style="display:flex;align-items:center;gap:6px;">Updated Date:<input id="meta-date" type="date" style="padding:6px;border:1px solid #ddd;border-radius:6px"></label>
   <label style="display:flex;align-items:center;gap:6px">Shift:<select id="meta-shift" style="padding:6px;border:1px solid #ddd;border-radius:6px"><option value="D">D</option><option value="N">N</option></select></label>
   <label style="display:flex;align-items:center;gap:6px">Billet No:<input id="meta-billet" type="number" min="1" max="999" style="padding:6px;border:1px solid #ddd;border-radius:6px;width:90px"></label>
-  <button id="meta-save" style="padding:6px 10px; border-radius:8px;
-  border:1px solid #ddd;
+  <button id="meta-save" style="padding:6px 10px; border-radius:20px;color: white;
+  background-color: #00A699;
   cursor:pointer">Save</button>
   <div id="meta-display" style="margin-left:auto;font-weight:600">Updated UpTo: —</div>
 </div>
