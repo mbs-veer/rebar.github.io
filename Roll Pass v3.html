@@ -7,10 +7,11 @@
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <style>
 body{
-  font-family:roboto,system-ui;
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
   background:#ebefff;
   margin:16px;
 }
@@ -21,7 +22,7 @@ body{
 }
 .stand-card{
   background:#fff;
-  border-radius:16px;
+  border-radius:0;
   padding:14px;
   box-shadow:0 10px 28px rgba(0,0,0,.08);
   width:fit-content;
@@ -34,7 +35,7 @@ body{
 .card-controls button{
   font-size:12px;
   padding:6px 8px;
-  border-radius:20px;
+  border-radius:0;
   border:1px solid #ddd;
   cursor:pointer;
 }
@@ -48,12 +49,12 @@ body{
   font-size:13px;
   background:#f2f3f6;
   padding:6px 10px;
-  border-radius:20px;
+  border-radius:0;
 }
 .card-info input{
   font-size:13px;
   padding:6px 8px;
-  border-radius:8px;
+  border-radius:0;
   border:1px solid #ddd;
 }
 table{
@@ -62,22 +63,26 @@ table{
 }
 th,td{
   padding:8px 12px;
-  border-radius:50px;
+  border-radius:0;
   text-align:center;
 }
-.status-ACTIVE{background:#92ffbf;font-weight:600;}
-.status-USED{background:#ffb3b3;font-weight:600;}
-.status-NEW{background:#e8f1ff;}
-.active-pass{outline:2px solid #111;}
+.status-ACTIVE{background:#0F9D58;font-weight:600;}
+.status-USED{background:#DB4437;font-weight:600;}
+.status-NEW{background:#4285F4;color:#ffffff;font-weight:700}
+.active-pass{outline:2px solid #0ba058;}
 
 /* Stand selector */
-.stand-control-card{background:#fff;border-radius:12px;padding:8px 12px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.stand-toggle-btn{padding:6px 8px;border-radius:8px;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px}
+.stand-control-card{background:#fff;border-radius:0;padding:8px 12px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.stand-toggle-btn{padding:6px 8px;border-radius:0;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px}
 .stand-toggle-btn.active{background:#92ffbf;border-color:#2f9a4a;font-weight:600}
 
 .controls{margin:12px 0;display:flex;gap:8px;align-items:center}
-.controls input{padding:8px;border-radius:8px;border:1px solid #ddd}
-.controls button{padding:8px 10px;border-radius:20px;border:1px solid #ddd;cursor:pointer}
+.controls input{padding:8px;border-radius:0;border:1px solid #ddd}
+.controls button{padding:8px 10px;border-radius:0;border:1px solid #ddd;cursor:pointer}
+/* Tonnage row: white text and uniform column width */
+.tonnage-row td{color:#ffffff;}
+.tonnage-row td:nth-child(n+2){width:64px;min-width:64px;max-width:64px}
+.tonnage-row td input{width:100%;box-sizing:border-box;color:#000}
 </style>
 </head>
 
@@ -93,14 +98,15 @@ th,td{
   <button id="clearBtn" style="background:#FF5A5F;color: white;">
   Clear All Data
 </button>
+<button onclick="exportTonnageJPEG()">Export Tonnage (JPEG)</button>
 
 </div>
 
-<div id="meta-card" style="background:#fff;padding:8px;border-radius:8px;margin:8px 0;box-shadow:0 1px 2px rgba(0,0,0,.04);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-  <label style="display:flex;align-items:center;gap:6px;">Updated Date:<input id="meta-date" type="date" style="padding:6px;border:1px solid #ddd;border-radius:6px"></label>
-  <label style="display:flex;align-items:center;gap:6px">Shift:<select id="meta-shift" style="padding:6px;border:1px solid #ddd;border-radius:6px"><option value="D">D</option><option value="N">N</option></select></label>
-  <label style="display:flex;align-items:center;gap:6px">Billet No:<input id="meta-billet" type="number" min="1" max="999" style="padding:6px;border:1px solid #ddd;border-radius:6px;width:90px"></label>
-  <button id="meta-save" style="padding:6px 10px; border-radius:20px;color: white;
+<div id="meta-card" style="background:#fff;padding:8px;border-radius:0;margin:8px 0;box-shadow:0 1px 2px rgba(0,0,0,.04);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+  <label style="display:flex;align-items:center;gap:6px;">Updated Date:<input id="meta-date" type="date" style="padding:6px;border:1px solid #ddd;border-radius:0"></label>
+  <label style="display:flex;align-items:center;gap:6px">Shift:<select id="meta-shift" style="padding:6px;border:1px solid #ddd;border-radius:0"><option value="D">D</option><option value="N">N</option></select></label>
+  <label style="display:flex;align-items:center;gap:6px">Billet No:<input id="meta-billet" type="number" min="1" max="999" style="padding:6px;border:1px solid #ddd;border-radius:0;width:90px"></label>
+  <button id="meta-save" style="padding:6px 10px; border-radius:0;color: white;
   background-color: #00A699;
   cursor:pointer">Save</button>
   <div id="meta-display" style="margin-left:auto;font-weight:600">Updated UpTo: —</div>
@@ -381,7 +387,8 @@ function render(){
           </select></td>`;
       }
     }
-    html+=`</tr><tr><td>Tonnage</td>`;
+    html+=`</tr><tr class="tonnage-row" ><td style="color:#0b1220">Tonnage</td>`;
+
     for(let p=1;p<=20;p++){
       const v=String(s['P'+p]||'').toUpperCase();
       const statusCls = v?`status-${v}`:'';
@@ -457,5 +464,43 @@ function clearAllData(){
 }
 
 </script>
+<script>
+function exportTonnageJPEG(){
+  const rows = document.querySelectorAll('.tonnage-row');
+
+  if(!rows.length){
+    alert('No tonnage data found');
+    return;
+  }
+
+  // Create temporary container
+  const container = document.createElement('div');
+  container.style.background = '#ffffff';
+  container.style.padding = '20px';
+  container.style.display = 'inline-block';
+
+  rows.forEach(r=>{
+    const table = document.createElement('table');
+    table.style.borderCollapse = 'separate';
+    table.style.borderSpacing = '8px 6px';
+    table.appendChild(r.cloneNode(true));
+    container.appendChild(table);
+  });
+
+  document.body.appendChild(container);
+
+  html2canvas(container,{
+    scale:2,
+    backgroundColor:'#ffffff'
+  }).then(canvas=>{
+    const link = document.createElement('a');
+    link.download = 'pass-card-tonnage.jpg';
+    link.href = canvas.toDataURL('image/jpeg',0.95);
+    link.click();
+    document.body.removeChild(container);
+  });
+}
+</script>
+
 </body>
 </html>
