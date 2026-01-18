@@ -1,506 +1,890 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-<meta charset="UTF-8">
-<title>Rolling Mill – Pass Card Viewer</title>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Rolling Mill – Pass Card Viewer</title>
 
-<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
-<style>
-body{
-  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-  background:#ebefff;
-  margin:16px;
-}
-#cards{
-  display:flex;
-  flex-direction:column;
-  gap:16px;
-}
-.stand-card{
-  background:#fff;
-  border-radius:0;
-  padding:14px;
-  box-shadow:0 10px 28px rgba(0,0,0,.08);
-  width:fit-content;
-}
-.stand-title{
-  font-weight:600;
-  display:flex;
-  justify-content:space-between;
-}
-.card-controls button{
-  font-size:12px;
-  padding:6px 8px;
-  border-radius:0;
-  border:1px solid #ddd;
-  cursor:pointer;
-}
-.card-info{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin:8px 0 10px;
-}
-.card-info div{
-  font-size:13px;
-  background:#f2f3f6;
-  padding:6px 10px;
-  border-radius:0;
-}
-.card-info input{
-  font-size:13px;
-  padding:6px 8px;
-  border-radius:0;
-  border:1px solid #ddd;
-}
-table{
-  border-collapse:separate;
-  border-spacing:8px 6px;
-}
-th,td{
-  padding:8px 12px;
-  border-radius:0;
-  text-align:center;
-}
-.status-ACTIVE{background:#0F9D58;font-weight:600;}
-.status-USED{background:#DB4437;font-weight:600;}
-.status-NEW{background:#4285F4;color:#ffffff;font-weight:700}
-.active-pass{outline:2px solid #0ba058;}
+    <style>
+      body {
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          "Helvetica Neue",
+          Arial;
+      background-color: #fffce0;
 
-/* Stand selector */
-.stand-control-card{background:#fff;border-radius:0;padding:8px 12px;box-shadow:0 1px 2px rgba(0,0,0,.04);margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.stand-toggle-btn{padding:6px 8px;border-radius:0;border:1px solid #ddd;background:#fff;cursor:pointer;font-size:13px}
-.stand-toggle-btn.active{background:#92ffbf;border-color:#2f9a4a;font-weight:600}
-
-.controls{margin:12px 0;display:flex;gap:8px;align-items:center}
-.controls input{padding:8px;border-radius:0;border:1px solid #ddd}
-.controls button{padding:8px 10px;border-radius:0;border:1px solid #ddd;cursor:pointer}
-/* Tonnage row: white text and uniform column width */
-.tonnage-row td{color:#ffffff;}
-.tonnage-row td:nth-child(n+2){width:64px;min-width:64px;max-width:64px}
-.tonnage-row td input{width:100%;box-sizing:border-box;color:#000}
-</style>
-</head>
-
-<body>
-
-<h2>Pass Card Viewer/Editor</h2>
-<input type="file" id="fileInput">
-
-<div class="controls">
-  <input type="number" id="tonnageInput" step="0.01" placeholder="Add Tonnage (MT)">
-  <button id="updateTonnageBtn">Update Active Pass</button>
-  <button id="exportBtn">Export Excel</button>
-  <button id="clearBtn" style="background:#FF5A5F;color: white;">
-  Clear All Data
-</button>
-<button onclick="exportTonnageJPEG()">Export Tonnage (JPEG)</button>
-
-</div>
-
-<div id="meta-card" style="background:#fff;padding:8px;border-radius:0;margin:8px 0;box-shadow:0 1px 2px rgba(0,0,0,.04);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-  <label style="display:flex;align-items:center;gap:6px;">Updated Date:<input id="meta-date" type="date" style="padding:6px;border:1px solid #ddd;border-radius:0"></label>
-  <label style="display:flex;align-items:center;gap:6px">Shift:<select id="meta-shift" style="padding:6px;border:1px solid #ddd;border-radius:0"><option value="D">D</option><option value="N">N</option></select></label>
-  <label style="display:flex;align-items:center;gap:6px">Billet No:<input id="meta-billet" type="number" min="1" max="999" style="padding:6px;border:1px solid #ddd;border-radius:0;width:90px"></label>
-  <button id="meta-save" style="padding:6px 10px; border-radius:0;color: white;
-  background-color: #00A699;
-  cursor:pointer">Save</button>
-  <div id="meta-display" style="margin-left:auto;font-weight:600">Updated UpTo: —</div>
-</div>
-
-<!-- Stand selector card (A,B,1..18) -->
-<div id="stand-controls" class="stand-control-card"></div>
-
-<div id="cards"></div>
-
-<script>
-  const STORAGE_KEY = 'roll_pass_autosave_v1';
-
-function saveState(){
-  const meta = getMetaInputs();
-  const state = {
-    rows,
-    meta,
-    editing:[...editingCards]
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
-
-function loadState(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if(!raw) return false;
-  try{
-    const state = JSON.parse(raw);
-    if(state.rows){
-      rows = state.rows;
-      editingCards = new Set(state.editing || []);
-      setMetaInputs(state.meta?.date, state.meta?.shift, state.meta?.billet);
-      return true;
-    }
-  }catch(e){
-    console.warn('Autosave corrupted, ignoring');
-  }
-  return false;
-}
-
-let rows=[];
-let editingCards=new Set();
-const defaultStands=['A','B',...Array.from({length:18},(_,i)=>String(i+1))];
-
-// wire file input and control buttons
-document.getElementById('fileInput').addEventListener('change', loadExcel);
-document.getElementById('updateTonnageBtn').addEventListener('click', updateTonnage);
-document.getElementById('exportBtn').addEventListener('click', exportExcel);
-document.getElementById('clearBtn').addEventListener('click', clearAllData);
-
-
-
-init();
-
-function init(){
-  if(loadState()){
-    renderStandControls();
-    render();
-    initMetaHandlers();
-    return;
-  }
-
-  // existing default init
-  defaultStands.forEach(st=>{
-    const s={Stand:st,'Stand Status':'','Top Roll ID':'','Bottom Roll ID':'','Roll Dia':'','Roll Material':''};
-    const t={Stand:st,'Stand Status':'Active'};
-    for(let p=1;p<=20;p++){s['P'+p]='';t['P'+p]='';s['GP'+p]='';}
-    rows.push(s,t);
-  });
-  renderStandControls();
-  render();
-  initMetaHandlers();
-}
-
-function setMetaInputs(date, shift, billet){
-  const d = document.getElementById('meta-date');
-  const s = document.getElementById('meta-shift');
-  const b = document.getElementById('meta-billet');
-  const disp = document.getElementById('meta-display');
-  if(d) d.value = date || '';
-  if(s) s.value = shift || 'D';
-  if(b) b.value = billet || '';
-  if(date && shift && billet){
-    const billetP = String(billet).padStart(3,'0');
-    if(disp) disp.textContent = 'Updated UpTo: '+`${date}-${shift}-${billetP}`;
-  }else{
-    if(disp) disp.textContent = 'Updated UpTo: —';
-  }
-}
-
-function getMetaInputs(){
-  const d = document.getElementById('meta-date');
-  const s = document.getElementById('meta-shift');
-  const b = document.getElementById('meta-billet');
-  return { date: d?String(d.value||''):'', shift: s?String(s.value||''):'', billet: b?String(b.value||''):'' };
-}
-
-function initMetaHandlers(){
-  const d = document.getElementById('meta-date');
-  const s = document.getElementById('meta-shift');
-  const b = document.getElementById('meta-billet');
-  const save = document.getElementById('meta-save');
-  const disp = document.getElementById('meta-display');
-  function refresh(){
-    const {date,shift,billet} = getMetaInputs();
-    if(date && shift && billet){ const billetP=String(billet).padStart(3,'0'); if(disp) disp.textContent='Updated UpTo: '+`${date}-${shift}-${billetP}`; }
-    else if(disp) disp.textContent='Updated UpTo: —';
-  }
-  if(d) d.addEventListener('change', refresh);
-  if(s) s.addEventListener('change', refresh);
-  if(b) b.addEventListener('change', refresh);
-  if(save) save.addEventListener('click', ()=>{
-    const {date,shift,billet} = getMetaInputs();
-    if(!date){ alert('Enter valid date'); return; }
-    if(!/^[DN]$/.test(shift)) { alert('Shift must be D or N'); return; }
-    if(!/^[0-9]{1,3}$/.test(billet)) { alert('Billet must be 1-3 digits'); return; }
-    refresh(); alert('Metadata updated');
-  });
-}
-
-function findStandIndex(stand){
-  for(let i=0;i<rows.length;i+=2) if(String(rows[i]['Stand']||'').trim()===String(stand)) return i;
-  return -1;
-}
-
-function ensureStandExists(stand){
-  const idx=findStandIndex(stand);
-  if(idx!==-1){ rows[idx]['Stand']=String(stand); rows[idx+1]['Stand']=String(stand); return idx; }
-  const s={Stand:stand,'Stand Status':'','Top Roll ID':'','Bottom Roll ID':'','Roll Dia':'','Roll Material':''};
-  const t={Stand:stand,'Stand Status':''};
-  for(let p=1;p<=20;p++){s['P'+p]='';t['P'+p]='';}
-  rows.push(s); rows.push(t);
-  return rows.length-2;
-}
-
-function toggleStand(stand){
-  const idx=ensureStandExists(stand);
-  const ton = rows[idx+1];
-  ton['Stand Status']= (ton['Stand Status']==='Active')? '' : 'Active';saveState();
-  renderStandControls(); render();
-}
-
-function renderStandControls(){
-  const div=document.getElementById('stand-controls');
-  const list=defaultStands.slice();
-  let html='<strong>Active Stands</strong> ';
-  list.forEach(st=>{ const idx=findStandIndex(st); const isActive=(idx!==-1 && rows[idx+1]['Stand Status']==='Active'); html+=`<button class="stand-toggle-btn ${isActive?'active':''}" onclick="toggleStand('${st}')">${st}</button>`});
-  div.innerHTML=html;
-}
-
-function loadExcel(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const wb = XLSX.read(new Uint8Array(ev.target.result), { type:'array' });
-    const sheet = wb.Sheets[wb.SheetNames[0]];
-    const raw = XLSX.utils.sheet_to_json(sheet, { defval:'' });
-
-    // Detect meta row at the top (Updated Date / Shift / Billet No or legacy Updated UpTo)
-    if(raw.length && (raw[0]['Updated Date'] || raw[0]['Shift'] || raw[0]['Billet No'] || raw[0]['Updated UpTo'] || String(raw[0]['Stand Status']||'').toLowerCase()==='meta')){
-      let dateVal = raw[0]['Updated Date'] || '';
-      let shiftVal = raw[0]['Shift'] || '';
-      let billetVal = raw[0]['Billet No'] || '';
-      if(!dateVal && raw[0]['Updated UpTo']){
-        const parts = String(raw[0]['Updated UpTo']).split('-');
-        if(parts.length>=4){ dateVal = parts.slice(0,3).join('-'); shiftVal = parts[3]||''; billetVal = parts[4]||''; }
+        margin: 16px;
       }
-      setMetaInputs(dateVal, shiftVal, billetVal);
-      raw.shift();
-    } else {
-      // try to parse from filename Roll_Pass_YYYY-MM-DD-X-NNN
-      const m = (file.name||'').match(/(\d{4}-\d{2}-\d{2}-[A-Za-z0-9]-\d{3})/);
-      if(m && m[1]){
-        const parts = m[1].split('-');
-        setMetaInputs(parts.slice(0,3).join('-'), parts[3]||'', parts[4]||'');
+   .diagonal-stripes {
+  background: repeating-linear-gradient(
+    45deg, /* Angle of the stripes */
+    #ccc, /* Gray start */
+    #ccc 10px, /* Gray end at 10px */
+    transparent 10px, /* Transparent start at 10px */
+    transparent 20px /* Transparent end and pattern repeats every 20px */
+  );
+  background-size: 20px 20px; /* Defines the size of each repeating tile */
+  height: 200px;
+}
+
+
+      #cards {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
       }
-    }
+      .stand-card {
+        background: #fff;
+        border-radius: 0;
+        padding: 14px;
+        box-shadow: 0 10px 28px rgba(0, 0, 0, 0.08);
+        width: fit-content;
+      }
+      .stand-title {
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+      }
+      .card-controls button {
+        font-size: 12px;
+        padding: 6px 8px;
+        border-radius: 0;
+        border: 1px solid #ddd;
+        cursor: pointer;
+      }
+      .card-info {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 8px 0 10px;
+      }
+      .card-info div {
+        font-size: 13px;
+        background: #f2f3f6;
+        padding: 6px 10px;
+        border-radius: 0;
+      }
+      .card-info input {
+        font-size: 13px;
+        padding: 6px 8px;
+        border-radius: 0;
+        border: 1px solid #ddd;
+      }
+      table {
+        border-collapse: separate;
+        border-spacing: 8px 6px;
+      }
+      th,
+      td {
+        padding: 8px 12px;
+        border-radius: 0;
+        text-align: center;
+      }
+      .status-ACTIVE {
+        background: #0f9d58;
+        font-weight: 600;
+      }
+      .status-USED {
+        background: #db4437;
+        font-weight: 600;
+      }
+      .status-NEW {
+        background: #4285f4;
+        color: #ffffff;
+        font-weight: 700;
+      }
+      .status-NOTOK {
+        background: #111827; /* near-black */
+        color: #ffffff;
+        font-weight: 700;
+      }
 
-    // Simple normalization: expect groove/status/ton rows grouped by Stand
-    const groups={}; const order=[];
-    raw.forEach(r=>{ const stand=String(r['Stand']||r['Stand Number']||'').trim(); if(!stand) return; if(!groups[stand]){groups[stand]={}; order.push(stand);} const ss=String(r['Stand Status']||'').toLowerCase(); if(ss==='groove profile'){ groups[stand].groove=r; } else { let hasNum=false; for(let p=1;p<=20;p++){ const v=r['P'+p]; if((typeof v==='number' && !isNaN(v)) || (String(v||'').trim()!=='' && !isNaN(Number(String(v).toString().replace(/,/g,''))))) { hasNum=true; break; } } if(ss==='active' || hasNum || ss.includes('tonn')) groups[stand].ton=r; else groups[stand].status=r; }});
-    const normalized=[]; order.forEach(st=>{ const e=groups[st]; const statusRow=e.status||{}; const tonRow=e.ton||{}; statusRow['Stand']=statusRow['Stand']||tonRow['Stand']||st; tonRow['Stand']=tonRow['Stand']||statusRow['Stand']||st; if(e.groove){ for(let p=1;p<=20;p++) statusRow['GP'+p]=String(e.groove['P'+p]||''); } statusRow['Stand Status']=statusRow['Stand Status']||''; normalized.push(statusRow); normalized.push(tonRow); });
-    if(normalized.length>0){ rows=normalized; }
-    renderStandControls(); render();
-  };
-  reader.readAsArrayBuffer(file);saveState();
-}
+      .active-pass {
+        outline: 2px solid #0ba058;
+      }
 
-function exportExcel(){
-  const newRows=[];
-  // collect data rows
-  for(let i=0;i<rows.length;i+=2){
-    const s=rows[i]; const t=rows[i+1]; const stand=s['Stand']||t['Stand']||''; s['Stand']=stand; if(t) t['Stand']=stand;
-    const groove={Stand:stand,'Stand Status':'Groove Profile'};
-    for(let p=1;p<=20;p++) groove['P'+p]=String(s['GP'+p]||'');
-    newRows.push(groove); newRows.push(s); if(t) newRows.push(t);
-  }
+      /* Stand selector */
+      .stand-control-card {
+        background: #fff;
+        border-radius: 0;
+        padding: 8px 12px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        margin: 12px 0;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .stand-toggle-btn {
+        padding: 6px 8px;
+        border-radius: 0;
+        border: 1px solid #ddd;
+        background: #fff;
+        cursor: pointer;
+        font-size: 13px;
+      }
+      .stand-toggle-btn.active {
+        background: #92ffbf;
+        border-color: #2f9a4a;
+        font-weight: 600;
+      }
 
-  // meta row from top inputs (if provided)
-  const md = document.getElementById('meta-date');
-  const ms = document.getElementById('meta-shift');
-  const mb = document.getElementById('meta-billet');
-  let filename='Roll_Tonnage_Export.xlsx';
-  if(md && ms && mb && md.value && ms.value && mb.value){
-    const billetP = String(mb.value).padStart(3,'0');
-    const meta = { 'Updated Date': md.value, 'Shift': ms.value, 'Billet No': mb.value, 'Updated UpTo': `${md.value}-${ms.value}-${billetP}`, 'Stand Status':'Meta' };
-    newRows.unshift(meta);
-    filename = `Roll_Pass_${meta['Updated UpTo']}.xlsx`;
-    const disp = document.getElementById('meta-display'); if(disp) disp.textContent = 'Updated UpTo: '+meta['Updated UpTo'];
-  }
+      .controls {
+        margin: 12px 0;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+      .controls input {
+        padding: 8px;
+        border-radius: 0;
+        border: 1px solid #ddd;
+      }
+      .controls button {
+        padding: 8px 10px;
+        border-radius: 0;
+        border: 1px solid #ddd;
+        cursor: pointer;
+      }
+      /* Tonnage row: white text and uniform column width */
+      .tonnage-row td {
+        color: #ffffff;
+      }
+      .tonnage-row td:nth-child(n + 2) {
+        width: 64px;
+        min-width: 64px;
+        max-width: 64px;
+      }
+      .tonnage-row td input {
+        width: 100%;
+        box-sizing: border-box;
+        color: #000;
+      }
+      .status-notok-text {
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1;
+        white-space: nowrap;
+        text-align: center;
+      }
+    </style>
+  </head>
 
-  const ws=XLSX.utils.json_to_sheet(newRows); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Pass_Cards'); XLSX.writeFile(wb,filename);localStorage.removeItem(STORAGE_KEY);
+  <body>
+    <h2>Pass Card Viewer/Editor</h2>
+    <input type="file" id="fileInput" />
 
-}
+    <div class="controls">
+      <input
+        type="number"
+        id="tonnageInput"
+        step="0.01"
+        placeholder="Add Tonnage (MT)"
+      />
+      <button id="updateTonnageBtn">Update Active Pass</button>
+      <button id="exportBtn">Export Excel</button>
+      <button id="clearBtn" style="background: #ff5a5f; color: white">
+        Clear All Data
+      </button>
+      <button onclick="exportTonnageJPEG()">Export Tonnage (JPEG)</button>
+    </div>
 
-function updateTonnage(){ const ton=Number(document.getElementById('tonnageInput').value); if(!ton||ton<=0) return alert('Enter valid tonnage'); for(let i=0;i<rows.length;i+=2){ const s=rows[i]; const t=rows[i+1]; if(!t||t['Stand Status']!=='Active') continue; let active=null; for(let p=1;p<=20;p++) if(String(s['P'+p]).toUpperCase()==='ACTIVE'){ active=p; break; } if(!active) continue; t['P'+active]=(Number(t['P'+active])||0)+ton; } saveState();render(); }
+    <div
+      id="meta-card"
+      style="
+        background: #fff;
+        padding: 8px;
+        border-radius: 0;
+        margin: 8px 0;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+      "
+    >
+      <label style="display: flex; align-items: center; gap: 6px"
+        >Updated Date:<input
+          id="meta-date"
+          type="date"
+          style="padding: 6px; border: 1px solid #ddd; border-radius: 0"
+      /></label>
+      <label style="display: flex; align-items: center; gap: 6px"
+        >Shift:<select
+          id="meta-shift"
+          style="padding: 6px; border: 1px solid #ddd; border-radius: 0"
+        >
+          <option value="D">D</option>
+          <option value="N">N</option>
+        </select></label
+      >
+      <label style="display: flex; align-items: center; gap: 6px"
+        >Billet No:<input
+          id="meta-billet"
+          type="number"
+          min="1"
+          max="999"
+          style="
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 0;
+            width: 90px;
+          "
+      /></label>
+      <button
+        id="meta-save"
+        style="
+          padding: 6px 10px;
+          border-radius: 0;
+          color: white;
+          background-color: #00a699;
+          cursor: pointer;
+        "
+      >
+        Save
+      </button>
+      <div id="meta-display" style="margin-left: auto; font-weight: 600">
+        Updated UpTo: —
+      </div>
+    </div>
 
+    <!-- Stand selector card (A,B,1..18) -->
+    <div id="stand-controls" class="stand-control-card"></div>
 
-function render(){
-  const c=document.getElementById('cards');
-  c.innerHTML='';
-  for(let i=0;i<rows.length;i+=2){
-    const s=rows[i],t=rows[i+1];
-    if(t['Stand Status']!=='Active')continue;
-    const edit=editingCards.has(i);
+    <div id="cards"></div>
 
-    let html=`<div class="stand-card">
+    <script>
+      const STORAGE_KEY = "roll_pass_autosave_v1";
+
+      function saveState() {
+        const meta = getMetaInputs();
+        const state = {
+          rows,
+          meta,
+          editing: [...editingCards],
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      function loadState() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        try {
+          const state = JSON.parse(raw);
+          if (state.rows) {
+            rows = state.rows;
+            editingCards = new Set(state.editing || []);
+            setMetaInputs(
+              state.meta?.date,
+              state.meta?.shift,
+              state.meta?.billet,
+            );
+            return true;
+          }
+        } catch (e) {
+          console.warn("Autosave corrupted, ignoring");
+        }
+        return false;
+      }
+
+      let rows = [];
+      let editingCards = new Set();
+      const defaultStands = [
+        "A",
+        "B",
+        ...Array.from({ length: 18 }, (_, i) => String(i + 1)),
+      ];
+
+      // wire file input and control buttons
+      document
+        .getElementById("fileInput")
+        .addEventListener("change", loadExcel);
+      document
+        .getElementById("updateTonnageBtn")
+        .addEventListener("click", updateTonnage);
+      document
+        .getElementById("exportBtn")
+        .addEventListener("click", exportExcel);
+      document
+        .getElementById("clearBtn")
+        .addEventListener("click", clearAllData);
+
+      init();
+
+      function init() {
+        if (loadState()) {
+          renderStandControls();
+          render();
+          initMetaHandlers();
+          return;
+        }
+
+        // existing default init
+        defaultStands.forEach((st) => {
+          const s = {
+            Stand: st,
+            "Stand Status": "",
+            "Top Roll ID": "",
+            "Bottom Roll ID": "",
+            "Roll Dia": "",
+            "Roll Material": "",
+          };
+          const t = { Stand: st, "Stand Status": "Active" };
+          for (let p = 1; p <= 20; p++) {
+            s["P" + p] = "";
+            t["P" + p] = "";
+            s["GP" + p] = "";
+            s["R" + p] = ""; // ✅ remarks
+          }
+          rows.push(s, t);
+        });
+        renderStandControls();
+        render();
+        initMetaHandlers();
+      }
+
+      function setMetaInputs(date, shift, billet) {
+        const d = document.getElementById("meta-date");
+        const s = document.getElementById("meta-shift");
+        const b = document.getElementById("meta-billet");
+        const disp = document.getElementById("meta-display");
+        if (d) d.value = date || "";
+        if (s) s.value = shift || "D";
+        if (b) b.value = billet || "";
+        if (date && shift && billet) {
+          const billetP = String(billet).padStart(3, "0");
+          if (disp)
+            disp.textContent = "Updated UpTo: " + `${date}-${shift}-${billetP}`;
+        } else {
+          if (disp) disp.textContent = "Updated UpTo: —";
+        }
+      }
+
+      function getMetaInputs() {
+        const d = document.getElementById("meta-date");
+        const s = document.getElementById("meta-shift");
+        const b = document.getElementById("meta-billet");
+        return {
+          date: d ? String(d.value || "") : "",
+          shift: s ? String(s.value || "") : "",
+          billet: b ? String(b.value || "") : "",
+        };
+      }
+
+      function initMetaHandlers() {
+        const d = document.getElementById("meta-date");
+        const s = document.getElementById("meta-shift");
+        const b = document.getElementById("meta-billet");
+        const save = document.getElementById("meta-save");
+        const disp = document.getElementById("meta-display");
+        function refresh() {
+          const { date, shift, billet } = getMetaInputs();
+          if (date && shift && billet) {
+            const billetP = String(billet).padStart(3, "0");
+            if (disp)
+              disp.textContent =
+                "Updated UpTo: " + `${date}-${shift}-${billetP}`;
+          } else if (disp) disp.textContent = "Updated UpTo: —";
+        }
+        if (d) d.addEventListener("change", refresh);
+        if (s) s.addEventListener("change", refresh);
+        if (b) b.addEventListener("change", refresh);
+        if (save)
+          save.addEventListener("click", () => {
+            const { date, shift, billet } = getMetaInputs();
+            if (!date) {
+              alert("Enter valid date");
+              return;
+            }
+            if (!/^[DN]$/.test(shift)) {
+              alert("Shift must be D or N");
+              return;
+            }
+            if (!/^[0-9]{1,3}$/.test(billet)) {
+              alert("Billet must be 1-3 digits");
+              return;
+            }
+            refresh();
+            alert("Metadata updated");
+          });
+      }
+
+      function findStandIndex(stand) {
+        for (let i = 0; i < rows.length; i += 2)
+          if (String(rows[i]["Stand"] || "").trim() === String(stand)) return i;
+        return -1;
+      }
+
+      function ensureStandExists(stand) {
+        const idx = findStandIndex(stand);
+        if (idx !== -1) {
+          rows[idx]["Stand"] = String(stand);
+          rows[idx + 1]["Stand"] = String(stand);
+          return idx;
+        }
+        const s = {
+          Stand: stand,
+          "Stand Status": "",
+          "Top Roll ID": "",
+          "Bottom Roll ID": "",
+          "Roll Dia": "",
+          "Roll Material": "",
+        };
+        const t = { Stand: stand, "Stand Status": "" };
+        for (let p = 1; p <= 20; p++) {
+          s["P" + p] = "";
+          t["P" + p] = "";
+        }
+        rows.push(s);
+        rows.push(t);
+        return rows.length - 2;
+      }
+
+      function toggleStand(stand) {
+        const idx = ensureStandExists(stand);
+        const ton = rows[idx + 1];
+        ton["Stand Status"] = ton["Stand Status"] === "Active" ? "" : "Active";
+        saveState();
+        renderStandControls();
+        render();
+      }
+
+      function renderStandControls() {
+        const div = document.getElementById("stand-controls");
+        const list = defaultStands.slice();
+        let html = "<strong>Active Stands</strong> ";
+        list.forEach((st) => {
+          const idx = findStandIndex(st);
+          const isActive =
+            idx !== -1 && rows[idx + 1]["Stand Status"] === "Active";
+          html += `<button class="stand-toggle-btn ${isActive ? "active" : ""}" onclick="toggleStand('${st}')">${st}</button>`;
+        });
+        div.innerHTML = html;
+      }
+
+      function loadExcel(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const wb = XLSX.read(new Uint8Array(ev.target.result), {
+            type: "array",
+          });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const raw = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+          // Detect meta row at the top (Updated Date / Shift / Billet No or legacy Updated UpTo)
+          if (
+            raw.length &&
+            (raw[0]["Updated Date"] ||
+              raw[0]["Shift"] ||
+              raw[0]["Billet No"] ||
+              raw[0]["Updated UpTo"] ||
+              String(raw[0]["Stand Status"] || "").toLowerCase() === "meta")
+          ) {
+            let dateVal = raw[0]["Updated Date"] || "";
+            let shiftVal = raw[0]["Shift"] || "";
+            let billetVal = raw[0]["Billet No"] || "";
+            if (!dateVal && raw[0]["Updated UpTo"]) {
+              const parts = String(raw[0]["Updated UpTo"]).split("-");
+              if (parts.length >= 4) {
+                dateVal = parts.slice(0, 3).join("-");
+                shiftVal = parts[3] || "";
+                billetVal = parts[4] || "";
+              }
+            }
+            setMetaInputs(dateVal, shiftVal, billetVal);
+            raw.shift();
+          } else {
+            // try to parse from filename Roll_Pass_YYYY-MM-DD-X-NNN
+            const m = (file.name || "").match(
+              /(\d{4}-\d{2}-\d{2}-[A-Za-z0-9]-\d{3})/,
+            );
+            if (m && m[1]) {
+              const parts = m[1].split("-");
+              setMetaInputs(
+                parts.slice(0, 3).join("-"),
+                parts[3] || "",
+                parts[4] || "",
+              );
+            }
+          }
+
+          // Simple normalization: expect groove/status/ton rows grouped by Stand
+          const groups = {};
+          const order = [];
+          raw.forEach((r) => {
+            const stand = String(r["Stand"] || r["Stand Number"] || "").trim();
+            if (!stand) return;
+            if (!groups[stand]) {
+              groups[stand] = {};
+              order.push(stand);
+            }
+            const ss = String(r["Stand Status"] || "").toLowerCase();
+            if (ss === "groove profile") {
+              groups[stand].groove = r;
+            } else {
+              let hasNum = false;
+              for (let p = 1; p <= 20; p++) {
+                const v = r["P" + p];
+                if (
+                  (typeof v === "number" && !isNaN(v)) ||
+                  (String(v || "").trim() !== "" &&
+                    !isNaN(Number(String(v).toString().replace(/,/g, ""))))
+                ) {
+                  hasNum = true;
+                  break;
+                }
+              }
+              if (ss === "active" || hasNum || ss.includes("tonn"))
+                groups[stand].ton = r;
+              else groups[stand].status = r;
+            }
+          });
+          const normalized = [];
+          order.forEach((st) => {
+            const e = groups[st];
+            const statusRow = e.status || {};
+            const tonRow = e.ton || {};
+            statusRow["Stand"] = statusRow["Stand"] || tonRow["Stand"] || st;
+            tonRow["Stand"] = tonRow["Stand"] || statusRow["Stand"] || st;
+            if (e.groove) {
+              for (let p = 1; p <= 20; p++)
+                statusRow["GP" + p] = String(e.groove["P" + p] || "");
+            }
+            statusRow["Stand Status"] = statusRow["Stand Status"] || "";
+            normalized.push(statusRow);
+            normalized.push(tonRow);
+          });
+          if (normalized.length > 0) {
+            rows = normalized;
+          }
+          renderStandControls();
+          render();
+        };
+        reader.readAsArrayBuffer(file);
+        saveState();
+      }
+
+      function exportExcel() {
+        const newRows = [];
+        // collect data rows
+        for (let i = 0; i < rows.length; i += 2) {
+          const s = rows[i];
+          const t = rows[i + 1];
+          const stand = s["Stand"] || t["Stand"] || "";
+          s["Stand"] = stand;
+          if (t) t["Stand"] = stand;
+          const groove = { Stand: stand, "Stand Status": "Groove Profile" };
+          for (let p = 1; p <= 20; p++)
+            groove["P" + p] = String(s["GP" + p] || "");
+          newRows.push(groove);
+          newRows.push(s);
+          if (t) newRows.push(t);
+        }
+
+        // meta row from top inputs (if provided)
+        const md = document.getElementById("meta-date");
+        const ms = document.getElementById("meta-shift");
+        const mb = document.getElementById("meta-billet");
+        let filename = "Roll_Tonnage_Export.xlsx";
+        if (md && ms && mb && md.value && ms.value && mb.value) {
+          const billetP = String(mb.value).padStart(3, "0");
+          const meta = {
+            "Updated Date": md.value,
+            Shift: ms.value,
+            "Billet No": mb.value,
+            "Updated UpTo": `${md.value}-${ms.value}-${billetP}`,
+            "Stand Status": "Meta",
+          };
+          newRows.unshift(meta);
+          filename = `Roll_Pass_${meta["Updated UpTo"]}.xlsx`;
+          const disp = document.getElementById("meta-display");
+          if (disp) disp.textContent = "Updated UpTo: " + meta["Updated UpTo"];
+        }
+
+        const ws = XLSX.utils.json_to_sheet(newRows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Pass_Cards");
+        XLSX.writeFile(wb, filename);
+        localStorage.removeItem(STORAGE_KEY);
+      }
+
+      function updateTonnage() {
+        const ton = Number(document.getElementById("tonnageInput").value);
+        if (!ton || ton <= 0) return alert("Enter valid tonnage");
+        for (let i = 0; i < rows.length; i += 2) {
+          const s = rows[i];
+          const t = rows[i + 1];
+          if (!t || t["Stand Status"] !== "Active") continue;
+          let active = null;
+          for (let p = 1; p <= 20; p++)
+            if (String(s["P" + p]).toUpperCase() === "ACTIVE") {
+              active = p;
+              break;
+            }
+          if (!active) continue;
+          t["P" + active] = (Number(t["P" + active]) || 0) + ton;
+        }
+        saveState();
+        render();
+      }
+      function render() {
+        const c = document.getElementById("cards");
+        c.innerHTML = "";
+
+        for (let i = 0; i < rows.length; i += 2) {
+          const s = rows[i];
+          const t = rows[i + 1];
+          if (t["Stand Status"] !== "Active") continue;
+
+          const edit = editingCards.has(i);
+
+          let html = `
+    <div class="stand-card">
       <div class="stand-title">
         Stand ${s.Stand}
         <span class="card-controls">
-          ${edit
-            ?`<button onclick="save(${i})">Save</button>
+          ${
+            edit
+              ? `<button onclick="save(${i})">Save</button>
                <button onclick="cancel(${i})">Cancel</button>`
-            :`<button onclick="edit(${i})">Edit</button>`}
+              : `<button onclick="edit(${i})">Edit</button>`
+          }
         </span>
       </div>`;
 
-    if(edit){
-      html+=`
+          /* ---------- Card Info ---------- */
+          if (edit) {
+            html += `
       <div class="card-info">
-        <input id="top-${i}" placeholder="Top Roll ID" value="${s['Top Roll ID']}">
-        <input id="bottom-${i}" placeholder="Bottom Roll ID" value="${s['Bottom Roll ID']}">
-        <input id="dia-${i}" placeholder="Roll Dia" value="${s['Roll Dia']}">
-        <input id="mat-${i}" placeholder="Roll Material" value="${s['Roll Material']}">
+        <input id="top-${i}" value="${s["Top Roll ID"]}" placeholder="Top Roll ID">
+        <input id="bottom-${i}" value="${s["Bottom Roll ID"]}" placeholder="Bottom Roll ID">
+        <input id="dia-${i}" value="${s["Roll Dia"]}" placeholder="Roll Dia">
+        <input id="mat-${i}" value="${s["Roll Material"]}" placeholder="Roll Material">
       </div>`;
-    }else{
-      html+=`
+          } else {
+            html += `
       <div class="card-info">
-        <div>Top: ${s['Top Roll ID']||'—'}</div>
-        <div>Bottom: ${s['Bottom Roll ID']||'—'}</div>
-        <div>Dia: ${s['Roll Dia']||'—'}</div>
-        <div>Material: ${s['Roll Material']||'—'}</div>
+        <div>Top: ${s["Top Roll ID"] || "—"}</div>
+        <div>Bottom: ${s["Bottom Roll ID"] || "—"}</div>
+        <div>Dia: ${s["Roll Dia"] || "—"}</div>
+        <div>Material: ${s["Roll Material"] || "—"}</div>
       </div>`;
-    }
+          }
 
-    html+=`<table><tr><th></th>`;
-    for(let p=1;p<=20;p++)html+=`<th>P${p}</th>`;
-    html+=`</tr><tr><td>Groove</td>`;
-    for(let p=1;p<=20;p++){
-      const gp = s['GP'+p]||'';
-      if(edit){
-        html+=`<td><input id="gp-${i}-${p}" value="${gp}"></td>`;
-      }else{
-        html+=`<td>${gp}</td>`;
-      }
-    }
-    if(edit){
-      html+=`</tr><tr><td>Status</td>`;
-      for(let p=1;p<=20;p++){
-        const v=s['P'+p]||'';
-        html+=`<td>
+          /* ---------- Table Header ---------- */
+          html += `<table><tr><th></th>`;
+          for (let p = 1; p <= 20; p++) html += `<th>P${p}</th>`;
+          html += `</tr>`;
+
+          /* ---------- Groove Row ---------- */
+          html += `<tr><td>Groove</td>`;
+          for (let p = 1; p <= 20; p++) {
+            const gp = s["GP" + p] || "";
+            html += edit
+              ? `<td><input id="gp-${i}-${p}" value="${gp}"></td>`
+              : `<td>${gp}</td>`;
+          }
+          html += `</tr>`;
+
+          /* ---------- STATUS ROW (EDIT MODE ONLY) ---------- */
+          if (edit) {
+            html += `<tr><td>Status</td>`;
+            for (let p = 1; p <= 20; p++) {
+              const v = String(s["P" + p] || "").toUpperCase();
+              html += `
+        <td>
           <select id="st-${i}-${p}">
             <option></option>
-            <option ${v==='NEW'?'selected':''}>NEW</option>
-            <option ${v==='ACTIVE'?'selected':''}>ACTIVE</option>
-            <option ${v==='USED'?'selected':''}>USED</option>
-          </select></td>`;
+            <option ${v === "NEW" ? "selected" : ""}>NEW</option>
+            <option ${v === "ACTIVE" ? "selected" : ""}>ACTIVE</option>
+            <option ${v === "USED" ? "selected" : ""}>USED</option>
+            <option ${v === "NOT OK" ? "selected" : ""}>NOT OK</option>
+          </select>
+        </td>`;
+            }
+            html += `</tr>`;
+          }
+
+          /* ---------- Tonnage Row ---------- */
+          html += `<tr class="tonnage-row"><td style="color:#0b1220">Tonnage</td>`;
+          for (let p = 1; p <= 20; p++) {
+            const v = String(s["P" + p]).toUpperCase();
+            const cls = v ? `status-${v.replace(/\s/g, "")}` : "";
+            const ap = v === "ACTIVE" ? "active-pass" : "";
+
+            if (edit) {
+              html += `<td class="${ap}">
+    <input type="number" id="ton-${i}-${p}" value="${t["P" + p]}">
+  </td>`;
+            } else {
+              if (v === "NOT OK") {
+                html += `
+      <td class="status-NOTOK">
+        <span class="status-notok-text">NOT OK</span>
+      </td>`;
+              } else {
+                html += `<td class="${cls}">${t["P" + p] || ""}</td>`;
+              }
+            }
+          }
+          html += `</tr>`;
+
+          /* ---------- REMARKS ROW (LAST ROW, VIEW + EDIT) ---------- */
+          const hasNotOk = Array.from(
+            { length: 20 },
+            (_, x) => String(s["P" + (x + 1)]).toUpperCase() === "NOT OK",
+          ).some(Boolean);
+
+          if (hasNotOk) {
+            html += `<tr><td>Remarks</td>`;
+            for (let p = 1; p <= 20; p++) {
+              const v = String(s["P" + p]).toUpperCase();
+              const r = s["R" + p] || "";
+
+              if (edit) {
+                html += `<td>
+            <input id="rm-${i}-${p}" value="${r}" ${v === "NOT OK" ? "" : "disabled"}>
+          </td>`;
+              } else {
+                html += `<td>${v === "NOT OK" ? r || "—" : ""}</td>`;
+              }
+            }
+            html += `</tr>`;
+          }
+
+          html += `</table></div>`;
+          c.innerHTML += html;
+        }
       }
-    }
-    html+=`</tr><tr class="tonnage-row" ><td style="color:#0b1220">Tonnage</td>`;
 
-    for(let p=1;p<=20;p++){
-      const v=String(s['P'+p]||'').toUpperCase();
-      const statusCls = v?`status-${v}`:'';
-      const ap = v==='ACTIVE' ? 'active-pass' : '';
-      if(edit){
-        html+=`<td class="${ap}"><input type="number" id="ton-${i}-${p}" value="${t['P'+p]}"></td>`;
-      }else{
-        html+=`<td class="${statusCls}">${t['P'+p]}</td>`;
+      function edit(i) {
+        editingCards.add(i);
+        render();
       }
-    }
-    html+=`</tr></table></div>`;
-    c.innerHTML+=html;
-  }
-}
+      function cancel(i) {
+        editingCards.delete(i);
+        render();
+      }
+      function save(i) {
+        const s = rows[i],
+          t = rows[i + 1];
+        s["Top Roll ID"] = document.getElementById(`top-${i}`).value;
+        s["Bottom Roll ID"] = document.getElementById(`bottom-${i}`).value;
+        s["Roll Dia"] = document.getElementById(`dia-${i}`).value;
+        s["Roll Material"] = document.getElementById(`mat-${i}`).value;
 
-function edit(i){editingCards.add(i);render();}
-function cancel(i){editingCards.delete(i);render();}
-function save(i){
-  const s=rows[i],t=rows[i+1];
-  s['Top Roll ID']=document.getElementById(`top-${i}`).value;
-  s['Bottom Roll ID']=document.getElementById(`bottom-${i}`).value;
-  s['Roll Dia']=document.getElementById(`dia-${i}`).value;
-  s['Roll Material']=document.getElementById(`mat-${i}`).value;
+        for (let p = 1; p <= 20; p++) {
+          s["GP" + p] = document.getElementById(`gp-${i}-${p}`).value || "";
+          s["P" + p] = document
+            .getElementById(`st-${i}-${p}`)
+            .value.toUpperCase();
+          s["R" + p] = document.getElementById(`rm-${i}-${p}`)?.value || "";
+          t["P" + p] =
+            Number(document.getElementById(`ton-${i}-${p}`).value) || "";
+        }
+        editingCards.delete(i);
+        saveState();
+        render();
+      }
 
-  for(let p=1;p<=20;p++){
-    s['GP'+p]=document.getElementById(`gp-${i}-${p}`).value||'';
-    s['P'+p]=document.getElementById(`st-${i}-${p}`).value.toUpperCase();
-    t['P'+p]=Number(document.getElementById(`ton-${i}-${p}`).value)||'';
-  }
-  editingCards.delete(i);saveState();
-  render();
-}
+      window.addEventListener("beforeunload", (e) => {
+        saveState();
+        e.preventDefault();
+        e.returnValue = "";
+      });
 
-window.addEventListener('beforeunload', e=>{
-  saveState();
-  e.preventDefault();
-  e.returnValue = '';
-});
+      function clearAllData() {
+        const ok = confirm(
+          "This will CLEAR all pass cards, tonnage, and metadata.\n\n" +
+            "This action CANNOT be undone.\n\nProceed?",
+        );
+        if (!ok) return;
 
-function clearAllData(){
-  const ok = confirm(
-    'This will CLEAR all pass cards, tonnage, and metadata.\n\n' +
-    'This action CANNOT be undone.\n\nProceed?'
-  );
-  if(!ok) return;
+        // clear persistence
+        localStorage.removeItem(STORAGE_KEY);
 
-  // clear persistence
-  localStorage.removeItem(STORAGE_KEY);
+        // reset runtime state
+        rows = [];
+        editingCards.clear();
 
-  // reset runtime state
-  rows = [];
-  editingCards.clear();
+        // reset meta inputs
+        setMetaInputs("", "D", "");
 
-  // reset meta inputs
-  setMetaInputs('', 'D', '');
+        // re-init default structure
+        defaultStands.forEach((st) => {
+          const s = {
+            Stand: st,
+            "Stand Status": "",
+            "Top Roll ID": "",
+            "Bottom Roll ID": "",
+            "Roll Dia": "",
+            "Roll Material": "",
+          };
+          const t = { Stand: st, "Stand Status": "Active" };
+          for (let p = 1; p <= 20; p++) {
+            s["P" + p] = "";
+            t["P" + p] = "";
+            s["GP" + p] = "";
+          }
+          rows.push(s, t);
+        });
 
-  // re-init default structure
-  defaultStands.forEach(st=>{
-    const s={Stand:st,'Stand Status':'','Top Roll ID':'','Bottom Roll ID':'','Roll Dia':'','Roll Material':''};
-    const t={Stand:st,'Stand Status':'Active'};
-    for(let p=1;p<=20;p++){
-      s['P'+p]='';
-      t['P'+p]='';
-      s['GP'+p]='';
-    }
-    rows.push(s,t);
-  });
+        renderStandControls();
+        render();
 
-  renderStandControls();
-  render();
+        alert("All data cleared. Fresh pass card loaded.");
+      }
+    </script>
+    
+    <script>
+      function exportTonnageJPEG() {
+        const rows = document.querySelectorAll(".tonnage-row");
 
-  alert('All data cleared. Fresh pass card loaded.');
-}
+        if (!rows.length) {
+          alert("No tonnage data found");
+          return;
+        }
 
-</script>
-<script>
-function exportTonnageJPEG(){
-  const rows = document.querySelectorAll('.tonnage-row');
+        // Create temporary container
+        const container = document.createElement("div");
+        container.style.background = "#ffffff";
+        container.style.padding = "20px";
+        container.style.display = "inline-block";
 
-  if(!rows.length){
-    alert('No tonnage data found');
-    return;
-  }
+        rows.forEach((r) => {
+          const table = document.createElement("table");
+          table.style.borderCollapse = "separate";
+          table.style.borderSpacing = "8px 6px";
+          table.appendChild(r.cloneNode(true));
+          container.appendChild(table);
+        });
 
-  // Create temporary container
-  const container = document.createElement('div');
-  container.style.background = '#ffffff';
-  container.style.padding = '20px';
-  container.style.display = 'inline-block';
+        document.body.appendChild(container);
 
-  rows.forEach(r=>{
-    const table = document.createElement('table');
-    table.style.borderCollapse = 'separate';
-    table.style.borderSpacing = '8px 6px';
-    table.appendChild(r.cloneNode(true));
-    container.appendChild(table);
-  });
-
-  document.body.appendChild(container);
-
-  html2canvas(container,{
-    scale:2,
-    backgroundColor:'#ffffff'
-  }).then(canvas=>{
-    const link = document.createElement('a');
-    link.download = 'pass-card-tonnage.jpg';
-    link.href = canvas.toDataURL('image/jpeg',0.95);
-    link.click();
-    document.body.removeChild(container);
-  });
-}
-</script>
-
-</body>
+        html2canvas(container, {
+          scale: 2,
+          backgroundColor: "#ffffff",
+        }).then((canvas) => {
+          const link = document.createElement("a");
+          link.download = "pass-card-tonnage.jpg";
+          link.href = canvas.toDataURL("image/jpeg", 0.95);
+          link.click();
+          document.body.removeChild(container);
+        });
+      }
+    </script>
+  </body>
 </html>
