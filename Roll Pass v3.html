@@ -22,22 +22,22 @@
           Roboto,
           "Helvetica Neue",
           Arial;
-      background-color: #fffce0;
+        background-color: #fffce0;
 
         margin: 16px;
       }
-   .diagonal-stripes {
-  background: repeating-linear-gradient(
-    45deg, /* Angle of the stripes */
-    #ccc, /* Gray start */
-    #ccc 10px, /* Gray end at 10px */
-    transparent 10px, /* Transparent start at 10px */
-    transparent 20px /* Transparent end and pattern repeats every 20px */
-  );
-  background-size: 20px 20px; /* Defines the size of each repeating tile */
-  height: 200px;
-}
-
+      .diagonal-stripes {
+        background: repeating-linear-gradient(
+          45deg,
+          /* Angle of the stripes */ #ccc,
+          /* Gray start */ #ccc 10px,
+          /* Gray end at 10px */ transparent 10px,
+          /* Transparent start at 10px */ transparent 20px
+            /* Transparent end and pattern repeats every 20px */
+        );
+        background-size: 20px 20px; /* Defines the size of each repeating tile */
+        height: 200px;
+      }
 
       #cards {
         display: flex;
@@ -847,44 +847,157 @@
 
         alert("All data cleared. Fresh pass card loaded.");
       }
-    </script>
-    
-    <script>
-      function exportTonnageJPEG() {
-        const rows = document.querySelectorAll(".tonnage-row");
+function exportTonnageJPEG() {
+  const cards = document.querySelectorAll(".stand-card");
+  if (!cards.length) {
+    alert("No active stand data found");
+    return;
+  }
 
-        if (!rows.length) {
-          alert("No tonnage data found");
-          return;
-        }
-
-        // Create temporary container
-        const container = document.createElement("div");
-        container.style.background = "#ffffff";
-        container.style.padding = "20px";
-        container.style.display = "inline-block";
-
-        rows.forEach((r) => {
-          const table = document.createElement("table");
-          table.style.borderCollapse = "separate";
-          table.style.borderSpacing = "8px 6px";
-          table.appendChild(r.cloneNode(true));
-          container.appendChild(table);
-        });
-
-        document.body.appendChild(container);
-
-        html2canvas(container, {
-          scale: 2,
-          backgroundColor: "#ffffff",
-        }).then((canvas) => {
-          const link = document.createElement("a");
-          link.download = "pass-card-tonnage.jpg";
-          link.href = canvas.toDataURL("image/jpeg", 0.95);
-          link.click();
-          document.body.removeChild(container);
-        });
+  // 1. Calculate Maximum Pass Number used across all stands
+  let maxPassUsed = 1;
+  rows.forEach((row) => {
+    for (let p = 1; p <= 20; p++) {
+      const val = String(row["P" + p] || "").trim();
+      if (val !== "" && val !== "0") {
+        if (p > maxPassUsed) maxPassUsed = p;
       }
-    </script>
+    }
+  });
+
+  // 2. Metadata Formatting
+  const dateInput = document.getElementById("meta-date").value;
+  const shiftInput = document.getElementById("meta-shift").value;
+  const billetInput = document.getElementById("meta-billet").value;
+
+  let displayDate = "—", displayShift = "—", displayBillet = "—";
+  if (dateInput) {
+    const dateObj = new Date(dateInput);
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    displayDate = `${String(dateObj.getDate()).padStart(2, '0')}-${months[dateObj.getMonth()]}-${dateObj.getFullYear()}`;
+  }
+  if (shiftInput) displayShift = shiftInput === "D" ? "Day" : "Night";
+  if (billetInput) displayBillet = String(billetInput).padStart(3, '0');
+
+  // 3. Container Setup (Center Aligned)
+  const container = document.createElement("div");
+  container.style.background = "#ffffff";
+  container.style.padding = "40px";
+  container.style.display = "inline-flex";
+  container.style.flexDirection = "column";
+  container.style.alignItems = "center"; // Centers children horizontally
+  container.style.fontFamily = "'Inter', sans-serif";
+
+  // TITLE (Centered)
+  const mainTitle = document.createElement("div");
+  mainTitle.style.fontSize = "32px";
+  mainTitle.style.fontWeight = "800";
+  mainTitle.style.marginBottom = "20px";
+  mainTitle.style.color = "#000";
+  mainTitle.style.width = "100%";
+  mainTitle.style.textAlign = "center";
+  mainTitle.textContent = "Rebar Mill - Pass Card";
+  container.appendChild(mainTitle);
+
+  // METADATA BOXES
+  const metaContainer = document.createElement("div");
+  metaContainer.style.display = "flex";
+  metaContainer.style.gap = "15px";
+  metaContainer.style.marginBottom = "20px";
+
+  const createBox = (label, val, bg, text) => {
+    const b = document.createElement("div");
+    b.style.padding = "10px 20px";
+    b.style.borderRadius = "8px";
+    b.style.backgroundColor = bg;
+    b.style.textAlign = "center";
+    b.style.minWidth = "140px";
+    b.innerHTML = `<div style="font-size:10px; font-weight:700; color:${text}; text-transform:uppercase;">${label}</div>
+                   <div style="font-size:16px; font-weight:600; color:#222;">${val}</div>`;
+    return b;
+  };
+  metaContainer.appendChild(createBox("Date", displayDate, "#e3f2fd", "#1976d2"));
+  metaContainer.appendChild(createBox("Shift", displayShift, "#e8f5e9", "#388e3c"));
+  metaContainer.appendChild(createBox("Billet No", displayBillet, "#fff3e0", "#f57c00"));
+  container.appendChild(metaContainer);
+
+  // LEGEND
+  const legend = document.createElement("div");
+  legend.style.display = "flex";
+  legend.style.gap = "20px";
+  legend.style.marginBottom = "30px";
+  const addLegendItem = (color, label) => {
+    legend.innerHTML += `<div style="display:flex; align-items:center; gap:8px; font-size:12px; font-weight:600;">
+      <div style="width:14px; height:14px; background:${color}; border-radius:2px;"></div><span>${label}</span></div>`;
+  };
+  addLegendItem("#2196f3", "NEW");
+  addLegendItem("#4caf50", "ACTIVE");
+  addLegendItem("#f44336", "USED");
+  addLegendItem("#000000", "NOT OK");
+  container.appendChild(legend);
+
+  // 4. Tables with Dynamic Column Truncation
+  cards.forEach((card) => {
+    const standName = card.querySelector(".stand-title").textContent.split('Edit')[0].trim();
+    const standNum = standName.replace("Stand ", "");
+    let sRow = rows.find((r, idx) => idx % 2 === 0 && String(r.Stand) === standNum);
+
+    const tonnageRow = card.querySelector(".tonnage-row");
+    if (tonnageRow && sRow) {
+      const table = document.createElement("table");
+      table.style.borderCollapse = "separate";
+      table.style.borderSpacing = "4px 2px";
+      table.style.marginBottom = "10px";
+      
+      const clonedRow = tonnageRow.cloneNode(true);
+      const cells = clonedRow.querySelectorAll("td");
+      
+      // Formatting
+      cells[0].textContent = standName;
+      cells[0].style.fontWeight = "bold";
+      cells[0].style.width = "90px";
+
+      // Loop through all 20 passes and remove those beyond maxPassUsed
+      for (let p = 20; p > maxPassUsed; p--) {
+        clonedRow.removeChild(cells[p]);
+      }
+
+      // Apply styles to remaining cells
+      for (let p = 1; p <= maxPassUsed; p++) {
+        const cell = cells[p];
+        cell.style.border = "1px solid #eee";
+        if (cell.classList.contains("status-NEW")) {
+          cell.textContent = sRow["GP" + p] || "NEW";
+          cell.style.backgroundColor = "#2196f3";
+          cell.style.color = "#fff";
+          cell.style.fontSize = "10px";
+        }
+        if (cell.classList.contains("status-USED")) cell.style.backgroundColor = "#f44336";
+        if (cell.classList.contains("status-ACTIVE")) cell.style.backgroundColor = "#4caf50";
+        if (cell.classList.contains("status-NOTOK")) {
+          cell.style.backgroundColor = "#000";
+          cell.style.color = "#fff";
+        }
+      }
+      table.appendChild(clonedRow);
+      container.appendChild(table);
+    }
+  });
+
+  document.body.appendChild(container);
+
+  // 5. High-Res Capture
+  html2canvas(container, {
+    scale: 4,
+    useCORS: true,
+    backgroundColor: "#ffffff",
+  }).then((canvas) => {
+    const link = document.createElement("a");
+    link.download = `Rebar_Mill_Report_${displayDate}.jpg`;
+    link.href = canvas.toDataURL("image/jpeg", 0.98);
+    link.click();
+    document.body.removeChild(container);
+  });
+}</script>
   </body>
 </html>
