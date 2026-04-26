@@ -638,7 +638,7 @@
 
             // Helper function to create labeled input fields
             const createLabeledInput = (f, isTotal = false) => {
-              const key = f.toLowerCase();
+              const key = f.toLowerCase().replace(/\s+/g, '');
               const label = document.createElement("label");
               label.className = "text-xs font-medium text-gray-700 block";
               label.textContent = f;
@@ -898,7 +898,7 @@
               ? hour >= DAY_START && hour <= DAY_END
               : !(hour > DAY_END && hour < DAY_START);
           numericFieldsInTotal.forEach((f) => {
-            const cls = f.toLowerCase();
+            const cls = f.toLowerCase().replace(/\s+/g, '');
             // Defensive check: ensure the input element exists
             const inputElement = s.querySelector("input." + cls);
             if (inputElement) {
