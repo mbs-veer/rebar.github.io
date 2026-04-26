@@ -944,13 +944,19 @@
         );
         const hour = parseInt(slot.dataset.hour, 10);
         const timeLabel = formatSlot(hour);
-        const discharged =
-          slot.querySelector("input.discharged").value.trim() || "0";
-        const rolled = slot.querySelector("input.rolled").value.trim() || "0";
-        const cobble = slot.querySelector("input.cobble").value.trim() || "0";
-        const chop = slot.querySelector("input.chop").value.trim() || "0";
-        const hotout = slot.querySelector("input.hotout").value.trim() || "0";
-        const negRolling = slot.querySelector("input.negrolling").value.trim() || "0";
+        
+        // Helper function to get values
+        const getVal = (selector) =>
+          slot.querySelector(selector)?.value?.trim() || "0";
+
+        const discharged = getVal("input.discharged");
+        const rolled = getVal("input.rolled");
+        const cobble = getVal("input.cobble");
+        const chop = getVal("input.chop");
+        const hotout = getVal("input.hotout");
+        const negRolling = getVal("input.negrolling");
+        const total = getVal("input.total");
+        
         const delayItems = [...slot.querySelectorAll(".delay-item")]
           .map((i) => i.value.trim())
           .filter((t) => t.length > 0);
@@ -958,8 +964,6 @@
         const delay = delayItems.length
           ? delayItems.map((d) => `• ${d}`).join("\n")
           : "-";
-
-        const total = slot.querySelector("input.total").value.trim() || "0";
 
         const lines = [
           `${dateStr}`,
