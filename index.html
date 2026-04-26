@@ -736,16 +736,9 @@
             const shareTextBtn = document.createElement("button");
             shareTextBtn.type = "button";
             shareTextBtn.className =
-              "flex-shrink-0 px-3 py-1 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-600 transition duration-150 text-sm shadow-md cursor-pointer";
+              "flex-shrink-0 px-3 py-1 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-600 transition duration-150 text-sm shadow-md cursor-pointer share-slot-btn";
             shareTextBtn.textContent = "Share";
-            
-            // Use click event on the button that finds its parent slot
-            shareTextBtn.onclick = function() {
-              const parentSlot = this.closest('.hourly-slot-card');
-              if (parentSlot) {
-                exportSlotAsText(parentSlot);
-              }
-            };
+            shareTextBtn.dataset.slotIndex = i;
 
             actionRow.appendChild(shareTextBtn);
             slot.appendChild(actionRow);
@@ -793,7 +786,7 @@
             Cobble: cobble,
             Chop: chop,
             Hotout: hotout,
-            "Neg Rolling": negRolling,
+            Neg_Rolling: negRolling,
             Delay: delay,
             Total: total,
           });
@@ -829,7 +822,7 @@
             s.querySelector("input.cobble").value = row.Cobble ?? "";
             s.querySelector("input.chop").value = row.Chop ?? "";
             s.querySelector("input.hotout").value = row.Hotout ?? "";
-            s.querySelector("input.negrolling").value = row["Neg Rolling"] ?? "";
+            s.querySelector("input.negrolling").value = row.Neg_Rolling ?? "";
             s.querySelector("input.delay").value = row.Delay ?? "";
             s.querySelector("input.total").value = row.Total ?? "";
           });
@@ -1090,6 +1083,20 @@
           renderTotals();
           // Trigger autosave when data is entered/changed
           autoSaveData();
+        }
+      });
+
+      // Handle share button clicks using event delegation
+      container.addEventListener("click", (e) => {
+        const shareBtn = e.target.closest(".share-slot-btn");
+        if (shareBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const slotIndex = parseInt(shareBtn.dataset.slotIndex, 10);
+          const slot = container.querySelector(`.hourly-slot-card[data-slot-index="${slotIndex}"]`);
+          if (slot) {
+            exportSlotAsText(slot);
+          }
         }
       });
 
