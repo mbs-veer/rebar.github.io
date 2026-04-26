@@ -611,7 +611,7 @@
         container.innerHTML = "";
         const start = START_HOUR;
         // Fields order: Discharged, Rolled, Cobble, Chop, Hotout, Total, Delay
-        const numericFields = ["Discharged", "Rolled", "Cobble", "Chop"]; // Core production metrics
+        const numericFields = ["Discharged", "Rolled", "Cobble", "Chop", "Neg Rolling"]; // Core production metrics
 
         try {
           for (let i = 0; i < TOTAL_SLOTS; i++) {
@@ -630,11 +630,11 @@
             timeHeader.textContent = formatSlot(hour);
             slot.appendChild(timeHeader);
 
-            // Container for Production & Secondary Metrics (6 fields in 6 columns on large screens)
+            // Container for Production & Secondary Metrics (7 fields in 7 columns on large screens)
             const metricContainer = document.createElement("div");
-            // Responsive grid for metrics: 2 cols on mobile, 3 on small, 6 on large
+            // Responsive grid for metrics: 2 cols on mobile, 3 on small, 7 on large
             metricContainer.className =
-              "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-3";
+              "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-3";
 
             // Helper function to create labeled input fields
             const createLabeledInput = (f, isTotal = false) => {
@@ -654,7 +654,7 @@
               return label;
             };
 
-            // 2. Core Production Metrics (Discharged, Rolled, Cobble, Chop)
+            // 2. Core Production Metrics (Discharged, Rolled, Cobble, Chop, Neg Rolling)
             numericFields.forEach((f) => {
               metricContainer.appendChild(createLabeledInput(f));
             });
@@ -773,6 +773,7 @@
           const cobble = s.querySelector("input.cobble").value || "";
           const chop = s.querySelector("input.chop").value || "";
           const hotout = s.querySelector("input.hotout").value || "";
+          const negRolling = s.querySelector("input.negrolling").value || "";
           const delayItems = [...s.querySelectorAll(".delay-item")]
             .map((i) => i.value.trim())
             .filter((t) => t.length > 0);
@@ -787,6 +788,7 @@
             Cobble: cobble,
             Chop: chop,
             Hotout: hotout,
+            "Neg Rolling": negRolling,
             Delay: delay,
             Total: total,
           });
@@ -822,6 +824,7 @@
             s.querySelector("input.cobble").value = row.Cobble ?? "";
             s.querySelector("input.chop").value = row.Chop ?? "";
             s.querySelector("input.hotout").value = row.Hotout ?? "";
+            s.querySelector("input.negrolling").value = row["Neg Rolling"] ?? "";
             s.querySelector("input.delay").value = row.Delay ?? "";
             s.querySelector("input.total").value = row.Total ?? "";
           });
@@ -877,6 +880,7 @@
         "Cobble",
         "Chop",
         "Hotout",
+        "Neg Rolling",
         "Total",
       ];
       // Day defined 07..18 inclusive, Night otherwise
@@ -948,6 +952,7 @@
         const cobble = slot.querySelector("input.cobble").value.trim() || "0";
         const chop = slot.querySelector("input.chop").value.trim() || "0";
         const hotout = slot.querySelector("input.hotout").value.trim() || "0";
+        const negRolling = slot.querySelector("input.negrolling").value.trim() || "0";
         const delayItems = [...slot.querySelectorAll(".delay-item")]
           .map((i) => i.value.trim())
           .filter((t) => t.length > 0);
@@ -966,6 +971,7 @@
           `Cobble: ${cobble}`,
           `Chop: ${chop}`,
           `Hotout: ${hotout}`,
+          `Neg Rolling: ${negRolling}%`,
           `Delay:\n${delay}`,
           `*Total: ${total}*`,
         ];
@@ -1027,6 +1033,7 @@
           `Cobble: ${t.Cobble}`,
           `Chop: ${t.Chop}`,
           `Hotout: ${t.Hotout}`,
+          `Neg Rolling: ${t["Neg Rolling"]}%`,
           `*Total: ${t.Total}*`,
         ];
         const text = lines.join("\n");
