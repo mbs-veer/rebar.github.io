@@ -1,0 +1,309 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stand Check List</title>
+
+<style>
+body {
+  font-family: Arial;
+  padding: 10px;
+  background: #f5f5f5;
+}
+.container {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  max-width: 500px;
+  margin: auto;
+}
+label {
+  font-weight: bold;
+  display: block;
+  margin-top: 10px;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0 12px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border: none;
+  border-radius: 5px;
+  background: #007bff;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+.whatsapp {
+  background: #25D366;
+}
+#output {
+  background: #eee;
+  font-family: monospace;
+  margin-top: 15px;
+}
+hr {
+  border: 0;
+  border-top: 1px solid #eee;
+  margin: 20px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h3>Stand Check List</h3>
+
+<!-- Stand Selection -->
+<select id="no">
+<option value="">Select Stand</option>
+<option value="Stand A">Stand A</option>
+<option value="Stand B">Stand B</option>
+<option value="Stand 1">Stand 1</option>
+<option value="Stand 2">Stand 2</option>
+<option value="Stand 3">Stand 3</option>
+<option value="Stand 4">Stand 4</option>
+<option value="Stand 5">Stand 5</option>
+<option value="Stand 6">Stand 6</option>
+<option value="Stand 7">Stand 7</option>
+<option value="Stand 8">Stand 8</option>
+<option value="Stand 9">Stand 9</option>
+<option value="Stand 10">Stand 10</option>
+<option value="Stand 11">Stand 11</option>
+<option value="Stand 12">Stand 12</option>
+<option value="Stand 13">Stand 13</option>
+<option value="Stand 14">Stand 14</option>
+<option value="Stand 15">Stand 15</option>
+<option value="Stand 16">Stand 16</option>
+<option value="Stand 17">Stand 17</option>
+<option value="Stand 18">Stand 18</option>
+</select>
+
+<input id="date" type="date">
+
+<!-- Time Selection -->
+<div style="display: flex; gap: 5px; margin: 5px 0 12px;">
+  <select id="time_hour" style="flex:1;">
+    <option value="">Hour</option>
+  </select>
+  <select id="time_min" style="flex:1;">
+    <option value="">Min</option>
+  </select>
+  <select id="time_ampm" style="flex:1;">
+    <option value="AM">AM</option>
+    <option value="PM">PM</option>
+  </select>
+</div>
+<input type="hidden" id="time">
+
+<input id="rev" placeholder="Revision">
+
+<select id="size">
+<option value="">Select Size</option>
+<option value="Common">Common</option>
+<option value="10MM">10MM</option>
+<option value="12MM">12MM</option>
+<option value="16MM">16MM</option>
+<option value="20MM">20MM</option>
+<option value="25MM">25MM</option>
+<option value="32MM">32MM</option>
+</select>
+
+<hr>
+
+<!-- Inspection Items - All defaulting to "Select Status" -->
+<label>Entry Guide</label>
+<select id="Entry Guide_status">
+<option value="">Select Status</option>
+<option value="Ok">Ok</option>
+<option value="Not Ok">Not Ok</option>
+</select>
+<input id="Entry Guide_remark" placeholder="Remarks">
+
+<label>Delivery Guide</label>
+<select id="Delivery Guide_status">
+<option value="">Select Status</option>
+<option value="Ok">Ok</option>
+<option value="Not Ok">Not Ok</option>
+</select>
+<input id="Delivery Guide_remark" placeholder="Remarks">
+
+<label>Roll Cross</label>
+<select id="Roll Cross_status">
+<option value="">Select Status</option>
+<option value="Ok">Ok</option>
+<option value="Not Ok">Not Ok</option>
+</select>
+<input id="Roll Cross_remark" placeholder="Remarks">
+
+<label>Roll Gap</label>
+<select id="Roll gap_status">
+<option value="">Select Status</option>
+<option value="Ok">Ok</option>
+<option value="Not Ok">Not Ok</option>
+</select>
+<input id="Roll gap_remark" placeholder="Remarks">
+
+<label>Entry Alignment</label>
+<select id="Entry alignment_status">
+<option value="">Select Status</option>
+<option value="Ok">Ok</option>
+<option value="Not Ok">Not Ok</option>
+</select>
+<input id="Entry alignment_remark" placeholder="Remarks">
+
+<label>Delivery Alignment</label>
+<select id="Delivery alignment_status">
+<option value="">Select Status</option>
+<option value="Ok">Ok</option>
+<option value="Not Ok">Not Ok</option>
+</select>
+<input id="Delivery alignment_remark" placeholder="Remarks">
+
+<label>Water Shower</label>
+<select id="Water shower_status">
+<option value="">Select Status</option>
+<option value="Ok">Ok</option>
+<option value="Not Ok">Not Ok</option>
+</select>
+<input id="Water shower_remark" placeholder="Remarks">
+
+<hr>
+
+<textarea id="remarks" placeholder="Any other general remarks"></textarea>
+
+<select id="checked">
+<option value="">Checked by (Roller)</option>
+<option value="Raman Kumar">Raman Kumar</option>
+<option value="Bindalal Sharma">Bindalal Sharma</option>
+<option value="Asad Jameel">Asad Jameel</option>
+<option value="Danish Ali">Danish Ali</option>
+<option value="Muhammad Qaisar">Muhammad Qaisar</option>
+<option value="Momtaj Miyan">Momtaj Miyan</option>
+<option value="Nadir Ali">Nadir Ali</option>
+<option value="Akmal Aziz">Akmal Aziz</option>
+<option value="Shakeeb Arsalan">Shakeeb Arsalan</option>
+<option value="Navatej Bahadur Singh">Navatej Bahadur Singh</option>
+<option value="Mohammad Kamarae Alam">Mohammad Kamarae Alam</option>
+<option value="Binod Kumar Mahrana">Binod Kumar Mahrana</option>
+<option value="Muhammad Daniyal">Muhammad Daniyal</option>
+<option value="Meddie Ndyanabo">Meddie Ndyanabo</option>
+</select>
+
+<select id="verified">
+<option value="">Verified by (Shift Incharge)</option>
+<option value="Suriyaprasad Manoharan">Suriyaprasad Manoharan</option>
+<option value="Munibabu">Munibabu</option>
+<option value="Dev Prakash">Dev Prakash</option>
+</select>
+
+<button onclick="generate()">Generate Text</button>
+<button class="whatsapp" onclick="sendWhatsApp()">Send to WhatsApp</button>
+<button onclick="clearForm()" style="background: #6c757d;">Clear Form</button>
+
+<textarea id="output" rows="10" placeholder="Generated text will appear here"></textarea>
+
+</div>
+
+<script>
+function getValue(id){
+  return document.getElementById(id).value;
+}
+
+function getCheckLine(label){
+  let status = getValue(label + "_status");
+  let remark = getValue(label + "_remark");
+  // If nothing is selected, display "Not Selected" in the generated text
+  if (!status) status = "Not Selected"; 
+  return label + ": " + status + (remark ? " (" + remark + ")" : "");
+}
+
+// Populate time dropdowns
+const hourSelect = document.getElementById('time_hour');
+for(let i=1; i<=12; i++){
+  let opt = document.createElement('option');
+  opt.value = i;
+  opt.text = i;
+  hourSelect.appendChild(opt);
+}
+
+const minSelect = document.getElementById('time_min');
+for(let i=0; i<=59; i++){
+  let opt = document.createElement('option');
+  let val = i.toString().padStart(2,'0');
+  opt.value = val;
+  opt.text = val;
+  minSelect.appendChild(opt);
+}
+
+function updateTime(){
+  let h = getValue('time_hour');
+  let m = getValue('time_min');
+  let ampm = getValue('time_ampm');
+  if(h && m) {
+    document.getElementById('time').value = h + ":" + m + " " + ampm;
+  }
+}
+
+document.getElementById('time_hour').addEventListener('change', updateTime);
+document.getElementById('time_min').addEventListener('change', updateTime);
+document.getElementById('time_ampm').addEventListener('change', updateTime);
+
+function generate(){
+  let text = `*Stand Check List*
+
+Date: ${getValue('date')}
+Time: ${getValue('time')}
+Revision: ${getValue('rev')}
+
+No: ${getValue('no')}
+Size: ${getValue('size')}
+
+${getCheckLine('Entry Guide')}
+${getCheckLine('Delivery Guide')}
+${getCheckLine('Roll Cross')}
+${getCheckLine('Roll gap')}
+${getCheckLine('Entry alignment')}
+${getCheckLine('Delivery alignment')}
+${getCheckLine('Water shower')}
+
+General Remarks: ${getValue('remarks')}
+
+Checked by: ${getValue('checked')}
+Verified by: ${getValue('verified')}
+`;
+  document.getElementById("output").value = text;
+}
+
+function clearForm(){
+  let selects = document.querySelectorAll('select');
+  selects.forEach(s => s.selectedIndex = 0);
+  
+  let inputs = document.querySelectorAll('input, textarea');
+  inputs.forEach(i => i.value = '');
+  
+  document.getElementById('time').value = '';
+}
+
+function sendWhatsApp(){
+  let content = document.getElementById("output").value;
+  if(!content) {
+    alert("Please generate the text first!");
+    return;
+  }
+  let msg = encodeURIComponent(content);
+  window.open("https://wa.me/?text=" + msg, "_blank");
+}
+</script>
+
+</body>
+</html>
