@@ -189,14 +189,12 @@ async function processZip(){
 
   const jszip = new JSZip();
   const zip = await jszip.loadAsync(file);
-  let allText = '';
+ const textPromises = Object.keys(zip.files)
+  .filter(filename => filename.toLowerCase().endsWith('.txt'))
+  .map(filename => zip.files[filename].async('string'));
 
-  for (let filename of Object.keys(zip.files)){
-    if(filename.toLowerCase().endsWith('.txt')){
-      const content = await zip.files[filename].async('string');
-      allText += '\n' + content;
-    }
-  }
+const texts = await Promise.all(textPromises);
+const allText = texts.join('\n');
 
   if(!allText){
     alert('No text files found in zip.');
@@ -205,16 +203,23 @@ async function processZip(){
   }
 
   // Split messages by WhatsApp timestamp pattern
-  const messages = allText.split(/\d{2}\/\d{2}\/\d{2},\s*\d{1,2}:\d{2}\s*(?:am|pm)\s*-\s*.+?:/i)
-                          .map(m => m.trim()).filter(m => m.length>0);
+const messages = allText
+  .split(/\d{2}\/\d{2}\/\d{2},\s*\d{1,2}:\d{2}\s*(?:am|pm)\s*-\s*.+?:/i)
+  .filter(Boolean);
 
   const records = messages.map(msg => {
     const dateMatch = msg.match(/(\d{2}-\w{3}-\d{4})/);
     const timeMatch = msg.match(/\*(.*?)\*/);
-    const getField = key => { 
-      const m = msg.match(new RegExp(key + ":\\s*(.*)", "i")); 
-      return m ? m[1].trim() : ''; 
-    };
+    const getField = key => {
+  const start = msg.indexOf(key + ':');
+  if (start === -1) return '';
+
+  const value = msg.substring(start + key.length + 1)
+                   .split('\n')[0]
+                   .trim();
+
+  return value;
+};
 
     let discharged = parseFloat(getField('Discharged')) || 0;
     let cobble = parseFloat(getField('Cobble')) || 0;
@@ -246,15 +251,13 @@ async function processZip(){
     }
 
     return {
-      date: dateMatch ? dateMatch[1] : '',
-      time: timeMatch ? timeMatch[1] : '',
-      Discharged: discharged,
-      Hotout: hotout === 0 ? '' : hotout,
-      "Entered in Mill": discharged - hotout,
-      Cobble: cobble === 0 ? '' : cobble,
-      Chop: chop === 0 ? '' : chop,
-      Delay: delay
-    };
+  
+  Time: timeMatch ? timeMatch[1] : '',
+  "Rolled": discharged - hotout,
+  Cobble: cobble === 0 ? '' : cobble,
+  Chop: chop === 0 ? '' : chop,
+  Delay: delay
+};
   });
 
   if(records.length === 0){
@@ -263,10 +266,23 @@ async function processZip(){
     return;
   }
 
-  const ws = XLSX.utils.json_to_sheet(records);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'ShiftLogs');
-  XLSX.writeFile(wb, 'WhatsApp_ShiftLogs.xlsx');
+const firstDateMatch = allText.match(/(\d{2}-\w{3}-\d{4})/);
+const firstDate = firstDateMatch ? firstDateMatch[1] : '';
+
+const worksheetData = [
+  ['Date', firstDate],
+  ['Size', ''],
+  [],
+  Object.keys(records[0]),
+...records.map(r => Object.values(r))
+];
+
+const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, 'ShiftLogs');
+
+XLSX.writeFile(wb, 'WhatsApp_ShiftLogs.xlsx');
 
   status.textContent = 'Done — file downloaded';
 }
