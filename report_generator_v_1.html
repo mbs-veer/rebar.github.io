@@ -10,7 +10,7 @@
 
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-
+<script src="https://unpkg.com/xlsx-js-style/dist/xlsx.bundle.js"></script>
   <style>
     :root{
       --bg:#f7f7f8; /* very light gray */
@@ -157,11 +157,47 @@
 }
 
 function toProperTitleCase(str) {
-  const smallWords = new Set([
-    'and','or','but','for','nor',
-    'a','an','the',
-    'as','at','by','for','from','in','of','on','to','with','due','so','hit','change','made','bolt'
-  ]);
+ 
+const smallWords = new Set([
+  'and','or','but','for','nor',
+  'a','an','the',
+  'as','at','by','from','in','of','on','to','with',
+  'due','so',
+
+  'hit','change','made','bolt','bend','nose','broken','both','came','tripped','accumulated','modification','check',
+
+  'enter','exit','close','leave','left','open',
+  'crossed','cross','crosses',
+
+  'checking','checked','check','checks',
+
+  'missed','miss','misses',
+
+  'rolled','rolledout','rolledin',
+
+  'same','time',
+
+  'adjustment','adjusted',
+
+  'delay','delayed',
+
+  'removed','remove',
+  'added','add',
+
+  'did','not',
+
+  'repeated','repeat',
+
+  'progress',
+
+  'material',
+
+  'done','out',
+  'formed','between','knocked','down','side'
+
+]);
+
+
 
   return str
     .toLowerCase()
@@ -205,7 +241,8 @@ const allText = texts.join('\n');
   // Split messages by WhatsApp timestamp pattern
 const messages = allText
   .split(/\d{2}\/\d{2}\/\d{2},\s*\d{1,2}:\d{2}\s*(?:am|pm)\s*-\s*.+?:/i)
-  .filter(Boolean);
+  .map(m => m.trim())
+  .filter(m => m.length > 20);
 
   const records = messages.map(msg => {
     const dateMatch = msg.match(/(\d{2}-\w{3}-\d{4})/);
@@ -272,9 +309,15 @@ const firstDate = firstDateMatch ? firstDateMatch[1] : '';
 const worksheetData = [
   ['Date', firstDate],
   ['Size', ''],
+  ['Mill Speed', ''],
   [],
   Object.keys(records[0]),
-...records.map(r => Object.values(r))
+  ...records.map(r => Object.values(r)),
+
+  [],
+['Day Tonnage', '', 'MT'],
+  ['Night Tonnage', '', 'MT'],
+  ['Billet Rolled', '', 'MT']
 ];
 
 const ws = XLSX.utils.aoa_to_sheet(worksheetData);
