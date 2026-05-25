@@ -754,7 +754,7 @@
         const combinedDelays = [delayStr, millChangeStr].filter(str => str && str.trim()).join('\n');
 
         const lines = [
-          `${dateStr} (${selectedSize})`,
+          `${dateStr} *${selectedSize}*`,
           `*${timeLabel}*`,
           `Discharged: ${discharged}`,
           `Rolled: ${rolled}`,
