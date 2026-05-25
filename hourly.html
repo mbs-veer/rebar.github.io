@@ -660,34 +660,21 @@
         }
       }
 
-      function resetAll() {
-        if (!window.confirm("Delete ALL saved data from this browser? This cannot be undone.")) return;
+     function resetAll() {
+        // Find all local storage keys matching this application
         Object.keys(localStorage).forEach((k) => {
-          if (k.startsWith("hourly-logger@")) localStorage.removeItem(k);
-        });
-
-        sizeSelect.value = "";
-        const slotEls = container.querySelectorAll('.hourly-slot-card');
-        slotEls.forEach(s => {
-          s.querySelectorAll('input, textarea, select').forEach(el => {
-            if (el.type !== 'select-one') el.value = '';
-          });
-
-          const delayList = s.querySelector('.delay-list');
-          if (delayList) {
-            delayList.innerHTML = '';
-            addDelayField();
+          if (k.startsWith("hourly-logger@")) {
+            localStorage.removeItem(k);
           }
-          const millChangeList = s.querySelector('.mill-change-list');
-          if (millChangeList) millChangeList.innerHTML = '';
         });
 
-        currentPeriod = determineInitialPeriod(dateInput.value);
-        buildMasterSlot();
-        window.alert('All data removed.');
+        // Immediately refresh the page to wipe the state clean
+        window.location.reload();
       }
 
       resetAllBtn.onclick = resetAll;
+
+      
 
       async function exportSlotAsText(slot) {
         const selectedSize = sizeSelect.value;
