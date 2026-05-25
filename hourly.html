@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hourly Mill Production Data Logger</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      .main-content {
+        min-height: calc(100vh - 40px);
+      }
+
+      .hourly-slot-card {
+        background-color: #f8fafc; /* slate-50 */
+        border: 1px solid #e2e8f0; /* slate-200 */
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      }
+    </style>
+  </head>
+
+  <body class="bg-gray-50 text-gray-800">
+    <div id="app" class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      
+      <main class="main-content">
+        <datalist id="delay-suggestions">
+  <option value="Cobble at"></option>
+  <option value="Furnace temperature low"></option>
+  <option value="Binding machine issue"></option>
+  <option value="Short bar removal delay"></option>
+  <option value="Charging side delay"></option>
+ 
+</datalist>
+       
+<div id="hourly-log-container" data-view-content class="p-4 bg-white rounded-xl shadow-lg w-full">
+  
+  <div class="relative flex items-center justify-center mb-6 pb-4 border-b border-gray-100 w-full">
+    
+    <a href="index.html" class="absolute left-0 p-2 text-blue-900 bg-gray-100 hover:bg-gray-200 rounded-lg transition duration-150 flex items-center justify-center shadow-sm z-10" title="Home">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+      </svg>
+    </a>
+    
+    <h2 class="rebar-title-text text-center text-xl sm:text-2xl font-bold text-gray-800 px-12">
+      Hourly Mill Production Data Logger
+    </h2>
+  </div>
+
+  <div class="flex flex-wrap gap-4 items-center mb-4 p-3 bg-gray-100 rounded-lg">
+    <div class="flex items-center gap-2">
+      <label for="entryDate" class="text-sm font-semibold text-gray-600">Date</label>
+      <input
+        id="entryDate"
+        type="date"
+        class="p-2 border border-gray-300 rounded-full bg-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+      />
+    </div>
+    
+    <div class="flex items-center gap-2">
+      <label for="millSize" class="text-sm font-semibold text-gray-600">Size</label>
+      <select
+        id="millSize"
+        class="p-2 border border-gray-300 rounded-full bg-white text-sm cursor-pointer min-w-[120px] focus:outline-none focus:ring-2 focus:ring-teal-500"
+      >
+        <option value="">None</option>
+        <option value="10MM">10MM</option>
+        <option value="12MM">12MM</option>
+        <option value="16MM">16MM</option>
+        <option value="20MM">20MM</option>
+        <option value="25MM">25MM</option>
+        <option value="32MM">32MM</option>
+      </select>
+    </div>
+
+    <div class="flex gap-2">
+      <button
+        id="todayBtn"
+        class="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-full hover:bg-gray-300 transition duration-150 text-sm shadow-sm"
+      >
+        Today
+      </button>
+      <button
+        id="resetAllBtn"
+        class="bg-red-500 text-white px-4 py-2 font-semibold rounded-full hover:bg-red-600 transition duration-150 shadow-sm text-sm"
+      >
+        Reset
+      </button>
+    </div>
+    <div class="flex-grow"></div>
+  </div>
+
+  <h3 class="text-lg font-bold mb-4 text-gray-700 uppercase tracking-wider border-b pb-1 border-gray-200">Hourly Slot</h3>
+  
+  <div id="masterSlotContainer" aria-live="polite" class="min-h-[100px]"></div>
+
+  <footer class="mt-6 text-xs font-semibold text-gray-400 tracking-wider border-t pt-4 uppercase">
+    HRM1 Production Department
+  </footer>
+</div>
+
+
+      </main>
+    </div>
+
+    <script>
+      // =========================================================================
+      // HOURLY PRODUCTION LOGIC
+      // =========================================================================
+      const DEFAULT_START_HOUR = 7; 
+      let currentPeriod = DEFAULT_START_HOUR;
+      let periodSelect;
+
+      const STAND_OPTIONS = ["A", "B", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18"];
+      const CHANGE_OPTIONS = ["Stand Change", "Pass Change", "Entry Guide Changed", "Twister Guide Changed", "Delivery Pipe Changed"];
+      const GUIDE_OPTIONS = ["Entry Guide Changed", "Twister Guide Changed", "Delivery Pipe Changed", "Delivery Guide Changed", "Slitter Guide Changed"];
+
+      const dateInput = document.getElementById("entryDate");
+      const sizeSelect = document.getElementById("millSize");
+      const container = document.getElementById("masterSlotContainer");
+      const resetAllBtn = document.getElementById("resetAllBtn");
+      const todayBtn = document.getElementById("todayBtn");
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+      dateInput.value = todayStr;
+
+      dateInput.addEventListener("change", () => {
+        currentPeriod = determineInitialPeriod(dateInput.value);
+        buildMasterSlot();
+      });
+
+      sizeSelect.addEventListener("change", () => {
+        autoSaveData();
+      });
+
+      todayBtn.addEventListener("click", () => {
+        dateInput.value = todayStr;
+        currentPeriod = determineInitialPeriod(todayStr);
+        buildMasterSlot();
+      });
+
+      function storageKeyForDate(dateStr) {
+        return `hourly-logger@${dateStr}`;
+      }
+
+      function pad(n) {
+        return n < 10 ? "0" + n : n;
+      }
+
+      function formatSlot(hour) {
+        const end = (hour + 1) % 24;
+        return pad(hour) + ":00 - " + pad(end) + ":00";
+      }
+
+      function formatDate(input) {
+        if (!input) return "";
+        let y, m, d;
+        if (typeof input === "string" && /^\d{4}-\d{2}-\d{2}$/.test(input)) {
+          [y, m, d] = input.split("-");
+        } else if (input instanceof Date) {
+          y = String(input.getFullYear());
+          m = pad(input.getMonth() + 1);
+          d = pad(input.getDate());
+        } else {
+          const dt = new Date(input);
+          if (isNaN(dt)) return String(input);
+          y = String(dt.getFullYear());
+          m = pad(dt.getMonth() + 1);
+          d = pad(dt.getDate());
+        }
+        const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        return `${d}-${months[parseInt(m, 10) - 1]}-${y}`;
+      }
+
+      function determineInitialPeriod(targetDateStr) {
+        try {
+          const sk = storageKeyForDate(targetDateStr);
+          const saved = localStorage.getItem(sk);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed.startHour !== undefined && parsed.startHour !== null) {
+              return parseInt(parsed.startHour, 10);
+            }
+          }
+        } catch (e) { console.error(e); }
+
+        if (targetDateStr === todayStr) {
+          return new Date().getHours(); 
+        }
+        return DEFAULT_START_HOUR;
+      }
+
+      function buildMasterSlot() {
+        if (!container) return;
+
+        container.innerHTML = "";
+        const start = currentPeriod;
+        const end = (start + 1) % 24;
+        const allFields = ["Discharged", "Rolled", "Cobble", "Chop", "Neg Rolling", "Hotout", "Total"];
+
+        try {
+          const slot = document.createElement("div");
+          slot.className = "p-4 rounded-xl hourly-slot-card flex flex-col justify-between";
+          slot.dataset.startHour = start;
+          slot.dataset.endHour = end;
+          slot.dataset.hour = start;
+
+          const timeHeader = document.createElement("div");
+          timeHeader.className = "flex items-center justify-between mb-3 border-b-2 border-teal-500 pb-1 gap-4";
+
+          periodSelect = document.createElement("select");
+          periodSelect.className = "text-xl font-extrabold text-blue-900 bg-transparent border-none focus:outline-none p-0 cursor-pointer";
+          periodSelect.setAttribute('aria-label', 'Select hourly period');
+          
+          periodSelect.addEventListener('change', () => {
+            currentPeriod = parseInt(periodSelect.value, 10);
+            autoSaveData();    
+            buildMasterSlot(); 
+          });
+          
+          for (let h = 0; h < 24; h++) {
+            const opt = document.createElement("option");
+            opt.value = String(h);
+            opt.text = formatSlot(h);
+            periodSelect.appendChild(opt);
+          }
+          periodSelect.value = String(currentPeriod);
+
+          timeHeader.appendChild(periodSelect);
+          slot.appendChild(timeHeader);
+
+          const metricContainer = document.createElement("div");
+          metricContainer.className = "grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3";
+
+          const createLabeledInput = (f) => {
+            const key = f.toLowerCase().replace(/\s+/g, '');
+            const label = document.createElement("label");
+            label.className = "text-xs font-medium text-gray-700 block";
+            label.textContent = f;
+            const inp = document.createElement("input");
+            inp.type = "number";
+            inp.autocomplete = "off";
+            inp.step = "any";
+            inp.className = `${key} w-full p-2 border border-gray-300 rounded-lg text-sm bg-white transition-colors duration-150`;
+            inp.dataset.field = f;
+            inp.addEventListener('input', autoSaveData);
+            
+            label.appendChild(inp);
+            return label;
+          };
+
+          allFields.forEach((f) => metricContainer.appendChild(createLabeledInput(f)));
+          slot.appendChild(metricContainer);
+
+          // DELAY SECTION 1: Standard Delays
+          const delayRow = document.createElement("div");
+          delayRow.className = "flex flex-col mb-3";
+          const delayLabel = document.createElement("label");
+          delayLabel.className = "text-xs font-semibold text-gray-700 block mb-1";
+          delayLabel.textContent = "General Delays";
+          const delayList = document.createElement("div");
+          delayList.className = "delay-list flex flex-col gap-2 mb-2";
+          const addDelayBtn = document.createElement("button");
+          addDelayBtn.type = "button";
+          addDelayBtn.className = "w-14 px-2 py-1 bg-teal-600 text-white text-xs rounded-md shadow hover:bg-teal-700 transition";
+          addDelayBtn.textContent = "Add";
+
+          function addDelayField(value = "") {
+            const wrapper = document.createElement("div");
+            wrapper.className = "flex gap-2 items-center";
+            const inp = document.createElement("input");
+            inp.type = "text";
+            inp.value = value;
+            inp.autocomplete = "off";
+            inp.setAttribute("list", "delay-suggestions");
+            inp.className = "delay-item flex-grow p-2 border border-gray-300 rounded-lg text-sm";
+            inp.addEventListener('input', autoSaveData);
+
+            const removeBtn = document.createElement("button");
+            removeBtn.type = "button";
+            removeBtn.textContent = "×";
+            removeBtn.className = "px-2 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition";
+            removeBtn.onclick = () => {
+              wrapper.remove();
+              autoSaveData();
+            };
+            wrapper.appendChild(inp);
+            wrapper.appendChild(removeBtn);
+            delayList.appendChild(wrapper);
+          }
+
+          addDelayBtn.onclick = () => {
+            addDelayField();
+            autoSaveData();
+          };
+
+          delayRow.appendChild(delayLabel);
+          delayRow.appendChild(delayList);
+          delayRow.appendChild(addDelayBtn);
+          slot.appendChild(delayRow);
+
+          // DELAY SECTION 2: Mill Change Delays
+          const millChangeRow = document.createElement("div");
+          millChangeRow.className = "flex flex-col mb-3 mt-2 border-t pt-3 border-gray-200";
+          const millChangeLabel = document.createElement("label");
+          millChangeLabel.className = "text-xs font-semibold text-gray-700 block mb-1";
+          millChangeLabel.textContent = "Mill Change Delays (Stand & Pass Changes)";
+          
+          const millChangeList = document.createElement("div");
+          millChangeList.className = "mill-change-list flex flex-col gap-2 mb-2";
+          
+          const addMillChangeBtn = document.createElement("button");
+          addMillChangeBtn.type = "button";
+          addMillChangeBtn.className = "w-24 px-2 py-1 bg-blue-900 text-white text-xs rounded-md shadow hover:bg-slate-700 transition";
+          addMillChangeBtn.textContent = "+ Add Change";
+
+          function addMillChangeField(savedObj = null) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "mill-change-item flex flex-wrap gap-3 items-start p-3 bg-gray-50 border border-gray-200 rounded-lg";
+            
+            const controlsContainer = document.createElement("div");
+            controlsContainer.className = "flex flex-wrap gap-2 items-center flex-grow";
+
+            const standSel = document.createElement("select");
+            standSel.className = "mill-stand p-1.5 border border-gray-300 rounded-md text-xs bg-white";
+            STAND_OPTIONS.forEach(optVal => {
+              const o = document.createElement("option");
+              o.value = optVal; o.text = `Stand ${optVal}`;
+              standSel.appendChild(o);
+            });
+            
+            const typeSel = document.createElement("select");
+            typeSel.className = "mill-type p-1.5 border border-gray-300 rounded-md text-xs bg-white font-medium";
+            CHANGE_OPTIONS.forEach(optVal => {
+              const o = document.createElement("option");
+              o.value = optVal; o.text = optVal;
+              typeSel.appendChild(o);
+            });
+
+            const guidesWrapper = document.createElement("div");
+            guidesWrapper.className = "mill-guides-container flex flex-wrap gap-3 p-1 px-2 border border-dashed border-gray-300 rounded-md bg-white text-xs";
+            
+            GUIDE_OPTIONS.forEach(optVal => {
+              const lbl = document.createElement("label");
+              lbl.className = "flex items-center gap-1 cursor-pointer font-normal text-gray-600 hover:text-gray-900";
+              
+              const chk = document.createElement("input");
+              chk.type = "checkbox";
+              chk.value = optVal;
+              chk.className = "mill-guide-checkbox rounded border-gray-300 text-teal-600 focus:ring-teal-500";
+              chk.addEventListener('change', autoSaveData);
+              
+              lbl.appendChild(chk);
+              lbl.appendChild(document.createTextNode(optVal.replace(" Changed", "").replace(" Change", "")));
+              guidesWrapper.appendChild(lbl);
+            });
+
+            function toggleGuideVisibility() {
+              if (typeSel.value === "Pass Change") {
+                guidesWrapper.classList.remove("hidden");
+              } else {
+                guidesWrapper.classList.add("hidden");
+                guidesWrapper.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+              }
+            }
+
+            standSel.addEventListener('change', autoSaveData);
+            typeSel.addEventListener('change', () => {
+              toggleGuideVisibility();
+              autoSaveData();
+            });
+
+            if(savedObj) {
+              standSel.value = savedObj.stand || "A";
+              typeSel.value = savedObj.type || "Stand Change";
+              
+              const savedGuides = Array.isArray(savedObj.guides) ? savedObj.guides : [];
+              guidesWrapper.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+                if (savedGuides.includes(chk.value)) chk.checked = true;
+              });
+            }
+
+            toggleGuideVisibility();
+
+            const removeBtn = document.createElement("button");
+            removeBtn.type = "button";
+            removeBtn.textContent = "×";
+            removeBtn.className = "ml-auto px-2 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition self-center";
+            removeBtn.onclick = () => {
+              wrapper.remove();
+              autoSaveData();
+            };
+
+            controlsContainer.appendChild(standSel);
+            controlsContainer.appendChild(typeSel);
+            controlsContainer.appendChild(guidesWrapper);
+            
+            wrapper.appendChild(controlsContainer);
+            wrapper.appendChild(removeBtn);
+            millChangeList.appendChild(wrapper);
+          }
+
+          addMillChangeBtn.onclick = () => {
+            addMillChangeField();
+            autoSaveData();
+          };
+
+          millChangeRow.appendChild(millChangeLabel);
+          millChangeRow.appendChild(millChangeList);
+          millChangeRow.appendChild(addMillChangeBtn);
+          slot.appendChild(millChangeRow);
+
+          const actionRow = document.createElement("div");
+          actionRow.className = "flex justify-end mt-2";
+          const shareTextBtn = document.createElement("button");
+          shareTextBtn.type = "button";
+          shareTextBtn.className = "flex-shrink-0 px-4 py-1.5 bg-teal-500 text-white font-semibold rounded-full hover:bg-teal-600 transition duration-150 text-sm shadow-md cursor-pointer";
+          shareTextBtn.textContent = "Share";
+          shareTextBtn.onclick = () => exportSlotAsText(slot);
+
+          actionRow.appendChild(shareTextBtn);
+          slot.appendChild(actionRow);
+
+          container.appendChild(slot);
+        } catch (error) {
+          console.error("Error building master slot:", error);
+        }
+
+        loadFromStorage();
+      }
+
+      function loadFromStorage() {
+        const date = dateInput.value;
+        if (!date) return;
+        const key = storageKeyForDate(date);
+        const raw = localStorage.getItem(key);
+        
+        if (!raw) {
+          sizeSelect.value = "";
+          container.querySelectorAll(".hourly-slot-card").forEach((s) => {
+            s.querySelectorAll("input").forEach((i) => (i.value = ""));
+            const dl = s.querySelector('.delay-list');
+            if (dl) {
+              dl.innerHTML = '';
+              addDelayField(); 
+            }
+            const mcl = s.querySelector('.mill-change-list');
+            if (mcl) mcl.innerHTML = ''; 
+          });
+          return;
+        }
+
+        try {
+          const parsed = JSON.parse(raw);
+          
+          if (parsed.size !== undefined) {
+            sizeSelect.value = parsed.size;
+          } else {
+            sizeSelect.value = "";
+          }
+
+          if (parsed.startHour !== undefined && parsed.startHour !== null) {
+            currentPeriod = parseInt(parsed.startHour, 10);
+            if (periodSelect && periodSelect.value !== String(currentPeriod)) {
+              periodSelect.value = String(currentPeriod);
+            }
+          }
+          
+          const rows = parsed.rows || [];
+          const slots = container.querySelectorAll(".hourly-slot-card");
+          slots.forEach((s, i) => {
+            const row = rows[i] || {};
+            s.querySelector("input.discharged").value = row.Discharged ?? "";
+            s.querySelector("input.rolled").value = row.Rolled ?? "";
+            s.querySelector("input.cobble").value = row.Cobble ?? "";
+            s.querySelector("input.chop").value = row.Chop ?? "";
+            s.querySelector("input.hotout").value = row.Hotout ?? "";
+            s.querySelector("input.negrolling").value = row.Neg_Rolling ?? "";
+            s.querySelector("input.total").value = row.Total ?? "";
+
+            const delayList = s.querySelector('.delay-list');
+            if (delayList) {
+              delayList.innerHTML = '';
+              const delays = Array.isArray(row.Delay) ? row.Delay : [];
+              if (delays.length === 0) delays.push('');
+              delays.forEach(d => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'flex gap-2 items-center';
+                const inp = document.createElement('input');
+                inp.type = 'text';
+                inp.value = d || '';
+                inp.setAttribute("list", "delay-suggestions");
+                inp.className = 'delay-item flex-grow p-2 border border-gray-300 rounded-lg text-sm';
+                inp.addEventListener('input', autoSaveData);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.textContent = '×';
+                removeBtn.className = 'px-2 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition';
+                removeBtn.onclick = () => {
+                  wrapper.remove();
+                  autoSaveData();
+                };
+                wrapper.appendChild(inp);
+                wrapper.appendChild(removeBtn);
+                delayList.appendChild(wrapper);
+              });
+            }
+
+            const millChangeList = s.querySelector('.mill-change-list');
+            if (millChangeList) {
+              millChangeList.innerHTML = '';
+              const millChangesSaved = Array.isArray(row.MillChanges) ? row.MillChanges : [];
+              millChangesSaved.forEach(changeObj => {
+                const wrapper = document.createElement("div");
+                wrapper.className = "mill-change-item flex flex-wrap gap-3 items-start p-3 bg-gray-50 border border-gray-200 rounded-lg";
+                
+                const controlsContainer = document.createElement("div");
+                controlsContainer.className = "flex flex-wrap gap-2 items-center flex-grow";
+
+                const standSel = document.createElement("select");
+                standSel.className = "mill-stand p-1.5 border border-gray-300 rounded-md text-xs bg-white";
+                STAND_OPTIONS.forEach(oV => {
+                  const o = document.createElement("option"); o.value = oV; o.text = `Stand ${oV}`; standSel.appendChild(o);
+                });
+                standSel.value = changeObj.stand || "A";
+
+                const typeSel = document.createElement("select");
+                typeSel.className = "mill-type p-1.5 border border-gray-300 rounded-md text-xs bg-white font-medium";
+                CHANGE_OPTIONS.forEach(oV => {
+                  const o = document.createElement("option"); o.value = oV; o.text = oV; typeSel.appendChild(o);
+                });
+                typeSel.value = changeObj.type || "Stand Change";
+
+                const guidesWrapper = document.createElement("div");
+                guidesWrapper.className = "mill-guides-container flex flex-wrap gap-3 p-1 px-2 border border-dashed border-gray-300 rounded-md bg-white text-xs";
+                
+                const savedGuides = Array.isArray(changeObj.guides) ? changeObj.guides : (changeObj.guide && changeObj.guide !== "None" ? [changeObj.guide] : []);
+
+                GUIDE_OPTIONS.forEach(optVal => {
+                  const lbl = document.createElement("label");
+                  lbl.className = "flex items-center gap-1 cursor-pointer font-normal text-gray-600 hover:text-gray-900";
+                  
+                  const chk = document.createElement("input");
+                  chk.type = "checkbox";
+                  chk.value = optVal;
+                  chk.className = "mill-guide-checkbox rounded border-gray-300 text-teal-600 focus:ring-teal-500";
+                  if(savedGuides.includes(optVal)) chk.checked = true;
+                  chk.addEventListener('change', autoSaveData);
+                  
+                  lbl.appendChild(chk);
+                  lbl.appendChild(document.createTextNode(optVal.replace(" Changed", "").replace(" Change", "")));
+                  guidesWrapper.appendChild(lbl);
+                });
+
+                function toggleGuideVisibility() {
+                  if (typeSel.value === "Pass Change") {
+                    guidesWrapper.classList.remove("hidden");
+                  } else {
+                    guidesWrapper.classList.add("hidden");
+                    guidesWrapper.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+                  }
+                }
+
+                standSel.addEventListener('change', autoSaveData);
+                typeSel.addEventListener('change', () => {
+                  toggleGuideVisibility();
+                  autoSaveData();
+                });
+
+                toggleGuideVisibility();
+
+                const removeBtn = document.createElement("button");
+                removeBtn.type = "button"; removeBtn.textContent = "×";
+                removeBtn.className = "ml-auto px-2 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 transition self-center";
+                removeBtn.onclick = () => { wrapper.remove(); autoSaveData(); };
+
+                controlsContainer.appendChild(standSel);
+                controlsContainer.appendChild(typeSel);
+                controlsContainer.appendChild(guidesWrapper);
+                
+                wrapper.appendChild(controlsContainer);
+                wrapper.appendChild(removeBtn);
+                millChangeList.appendChild(wrapper);
+              });
+            }
+          });
+        } catch (e) {
+          console.error("Error parsing stored data:", e);
+        }
+      }
+
+      function gatherData() {
+        const rows = [];
+        const slots = container.querySelectorAll(".hourly-slot-card");
+        slots.forEach((s) => {
+          const start = parseInt(s.dataset.startHour ?? s.dataset.hour, 10);
+          const end = parseInt(s.dataset.endHour ?? ((start + 1) % 24), 10);
+          const timeLabel = formatSlot(start);
+          const discharged = s.querySelector("input.discharged")?.value || "";
+          const rolled = s.querySelector("input.rolled")?.value || "";
+          const cobble = s.querySelector("input.cobble")?.value || "";
+          const chop = s.querySelector("input.chop")?.value || "";
+          const hotout = s.querySelector("input.hotout")?.value || "";
+          const negRolling = s.querySelector("input.negrolling")?.value || "";
+          const total = s.querySelector("input.total")?.value || "";
+          
+          const delayItems = [...s.querySelectorAll(".delay-item")]
+            .map((i) => i.value.trim())
+            .filter((t) => t.length > 0);
+
+          const millChangeItems = [...s.querySelectorAll(".mill-change-item")].map(wrapper => {
+            const type = wrapper.querySelector(".mill-type").value;
+            const activeGuides = [];
+            
+            if (type === "Pass Change") {
+              wrapper.querySelectorAll(".mill-guide-checkbox:checked").forEach(chk => {
+                activeGuides.push(chk.value);
+              });
+            }
+
+            return {
+              stand: wrapper.querySelector(".mill-stand").value,
+              type: type,
+              guides: activeGuides
+            };
+          });
+
+          rows.push({
+            TimeSlot: timeLabel,
+            StartHour: start,
+            EndHour: end,
+            Discharged: discharged,
+            Rolled: rolled,
+            Cobble: cobble,
+            Chop: chop,
+            Hotout: hotout,
+            Neg_Rolling: negRolling,
+            Delay: delayItems,
+            MillChanges: millChangeItems,
+            Total: total,
+          });
+        });
+        return rows;
+      }
+
+      function autoSaveData() {
+        const date = dateInput.value;
+        if (!date) return;
+        try {
+          localStorage.setItem(
+            storageKeyForDate(date),
+            JSON.stringify({
+              startHour: currentPeriod,
+              size: sizeSelect.value,
+              rows: gatherData(),
+            })
+          );
+        } catch (e) {
+          console.error('Unable to save data:', e);
+        }
+      }
+
+      function resetAll() {
+        if (!window.confirm("Delete ALL saved data from this browser? This cannot be undone.")) return;
+        Object.keys(localStorage).forEach((k) => {
+          if (k.startsWith("hourly-logger@")) localStorage.removeItem(k);
+        });
+
+        sizeSelect.value = "";
+        const slotEls = container.querySelectorAll('.hourly-slot-card');
+        slotEls.forEach(s => {
+          s.querySelectorAll('input, textarea, select').forEach(el => {
+            if (el.type !== 'select-one') el.value = '';
+          });
+
+          const delayList = s.querySelector('.delay-list');
+          if (delayList) {
+            delayList.innerHTML = '';
+            addDelayField();
+          }
+          const millChangeList = s.querySelector('.mill-change-list');
+          if (millChangeList) millChangeList.innerHTML = '';
+        });
+
+        currentPeriod = determineInitialPeriod(dateInput.value);
+        buildMasterSlot();
+        window.alert('All data removed.');
+      }
+
+      resetAllBtn.onclick = resetAll;
+
+      async function exportSlotAsText(slot) {
+        const selectedSize = sizeSelect.value;
+        if (!selectedSize) {
+          alert("Error: Mill product Size must be selected before sharing!");
+          return;
+        }
+
+        const dateStr = formatDate(dateInput.value || new Date().toISOString().slice(0, 10));
+        const start = parseInt(slot.dataset.startHour ?? slot.dataset.hour, 10);
+        const timeLabel = formatSlot(start);
+        
+        const getVal = (selector) => slot.querySelector(selector)?.value?.trim() || "";
+
+        const discharged = getVal("input.discharged") || "0";
+        const rolled = getVal("input.rolled") || "0";
+        const cobble = getVal("input.cobble") || "0";
+        const chop = getVal("input.chop") || "0";
+        const hotout = getVal("input.hotout") || "0";
+        const negRolling = getVal("input.negrolling");
+        const totalValue = getVal("input.total") || "0";
+
+        if (!negRolling) {
+          alert("Error: Negative Rolling % is required before sharing!");
+          return;
+        }
+        
+        const delayItems = [...slot.querySelectorAll(".delay-item")]
+          .map((i) => i.value.trim())
+          .filter((t) => t.length > 0);
+        const delayStr = delayItems.length ? delayItems.map((d) => `• ${d}`).join("\n") : "";
+
+        const millChangeItems = [...slot.querySelectorAll(".mill-change-item")].map(wrapper => {
+          const stand = wrapper.querySelector(".mill-stand").value;
+          const type = wrapper.querySelector(".mill-type").value;
+          
+          let guideStr = "";
+          if (type === "Pass Change") {
+            const activeGuides = [];
+            wrapper.querySelectorAll(".mill-guide-checkbox:checked").forEach(chk => {
+              let cleanName = chk.value.replace(" Changed", "").replace(" Change", "").toLowerCase();
+              activeGuides.push(cleanName);
+            });
+
+            if (activeGuides.length > 0) {
+              let combinedText = "";
+              if (activeGuides.length === 1) {
+                combinedText = `${activeGuides[0]} changed`;
+              } else if (activeGuides.length === 2) {
+                combinedText = `${activeGuides[0]} and ${activeGuides[1]} changed`;
+              } else {
+                const last = activeGuides.pop();
+                combinedText = `${activeGuides.join(", ")}, and ${last} changed`;
+              }
+              combinedText = combinedText.charAt(0).toUpperCase() + combinedText.slice(1);
+              guideStr = ` (${combinedText})`;
+            }
+          }
+          
+          return `• Stand ${stand} - ${type}${guideStr}`;
+        });
+        const millChangeStr = millChangeItems.length ? millChangeItems.map((m) => m).join("\n") : "";
+
+        const combinedDelays = [delayStr, millChangeStr].filter(str => str && str.trim()).join('\n');
+
+        const lines = [
+          `${dateStr} (${selectedSize})`,
+          `*${timeLabel}*`,
+          `Discharged: ${discharged}`,
+          `Rolled: ${rolled}`,
+          `Cobble: ${cobble}`,
+          `Chop: ${chop}`,
+          `Hotout: ${hotout}`,
+          `Neg Rolling: ${negRolling}%`,
+          "", 
+          `Delays:\n${combinedDelays || '-'}`,
+          `*Total: ${totalValue}*`,
+        ];
+        const text = lines.join("\n");
+
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: `Hourly ${dateStr} ${timeLabel}`,
+              text,
+            });
+            return;
+          } catch (e) {
+            console.error("Native share failed:", e);
+          }
+        }
+
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+            alert("Report data copied to clipboard!");
+          } else {
+            alert("Unable to copy automatically. Here is your text:\n\n" + text);
+          }
+        } catch (err) {
+          console.error("Clipboard export failed:", err);
+        }
+      }
+
+      currentPeriod = determineInitialPeriod(dateInput.value);
+      buildMasterSlot();
+    </script>
+  </body>
+</html>
