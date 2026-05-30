@@ -2,202 +2,195 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WhatsApp Zip → Excel — Beautified</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>WhatsApp Zip → Excel</title>
 
-  <!-- Google font similar to Airbnb's friendly UI -->
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://unpkg.com/xlsx-js-style/dist/xlsx.bundle.js"></script>
+  <script src="https://unpkg.com/xlsx-js-style/dist/xlsx.bundle.js"></script>
+  
   <style>
-    :root{
-      --bg:#f7f7f8; /* very light gray */
-      --card:#ffffff;
-      --muted:#6b7280;
-      --accent:#25D366; /* Airbnb coral */
-      --accent-dark:#e24b50;
-      --glass: rgba(255,255,255,0.6);
-      --radius:14px;
-      --shadow: 0 6px 20px rgba(16,24,40,0.08);
-      --radius-sm:10px;
-      --max-width:920px;
-      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-  color: #111827;
+    :root {
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --muted: #6b7280;
+      --accent: #25D366;
+      --accent-gradient: linear-gradient(90deg, #25D366 0%, #1E88E5 100%);
+      --radius: 16px;
+      --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+      color: #111827;
     }
 
-    html,body{height:100%;}
-    body{
-      margin:0;
-      min-height:100%;
-      background: linear-gradient(180deg, #fbfbfc 0%, var(--bg) 100%);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:40px 20px;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
+    * {
+      box-sizing: border-box;
     }
 
-    .shell{
-      width:100%;
-      max-width:var(--max-width);
-      background:var(--card);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-      display:grid;
-      grid-template-columns: 1fr 380px;
+    body {
+      margin: 0;
+      padding: 16px;
+      min-height: 100vh;
+      background-color: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    /* left content */
-    .main{
-      padding:34px 32px;
+    .shell {
+      width: 100%;
+      max-width: 500px; /* Perfect sizing for mobile screens & neat on desktop */
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 24px;
     }
 
-    .brand{
-      display:flex;align-items:center;gap:14px;margin-bottom:8px;
-    }
-    .logo{
-      width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,var(--accent),#ff8a80);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:20px;box-shadow:0 6px 18px rgba(255,90,95,0.12);
-    }
-    h1{font-size:20px;margin:0 0 6px 0;font-weight:700;}
-    p.lead{margin:0;color:var(--muted);font-size:14px}
-
-    .file-area{
-      margin-top:22px;
-      border:1px dashed rgba(17,24,39,0.06);
-      background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
-      padding:18px;border-radius:12px;display:flex;gap:14px;align-items:center;
+    .back-link {
+      display: inline-block;
+      margin-bottom: 16px;
+      text-decoration: none;
+      color: #1E88E5;
+      font-weight: 600;
+      font-size: 14px;
     }
 
-    .file-area input[type=file]{display:none}
-
-    .file-drop{flex:1;display:flex;gap:12px;align-items:center}
-    .file-drop .hint{font-size:14px;color:var(--muted)}
-
-    .btn{
-      display:inline-flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;border:none;cursor:pointer;font-weight:600;font-size:14px;background:var(--accent);color:white;box-shadow: 0 8px 24px rgba(255,90,95,0.14);
+    h1 {
+      font-size: 24px;
+      margin: 0 0 8px 0;
+      font-weight: 700;
+      background: var(--accent-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    .btn.secondary{background:transparent;color:var(--accent);box-shadow:none;border:1px solid rgba(17,24,39,0.06)}
-    .btn:hover{transform:translateY(-1px)}
 
-    /* small meta */
-    .meta{margin-top:14px;font-size:13px;color:var(--muted)}
-
-    /* right panel */
-    .side{
-      padding:24px;background:linear-gradient(180deg, #fff, #fbfcfd);border-left:1px solid rgba(17,24,39,0.03);
-      display:flex;flex-direction:column;gap:16px;align-items:stretch
+    p.lead {
+      margin: 0 0 24px 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
     }
-    .card{background:var(--glass);backdrop-filter: blur(6px);padding:14px;border-radius:12px;border:1px solid rgba(17,24,39,0.04)}
 
-    label.small{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
-    .preview{font-size:13px;color:#111827;font-weight:600}
+    /* Core Mobile Dropzone styling */
+    .file-area {
+      border: 2px dashed #e5e7eb;
+      background: #fafafa;
+      padding: 32px 16px;
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 16px;
+      transition: background 0.2s ease;
+    }
 
-    /* footer */
-    .foot{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:14px 32px;border-top:1px solid rgba(17,24,39,0.03);background:transparent}
-    .foot .muted{color:var(--muted);font-size:13px}
+    .file-area input[type=file] {
+      display: none;
+    }
 
-    /* responsive */
-    @media (max-width:980px){
-      .shell{grid-template-columns:1fr}
-      .side{order:2}
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--muted);
+    }
+
+    .hint {
+      font-size: 14px;
+      color: var(--muted);
+      word-break: break-all;
+      max-width: 100%;
+    }
+
+    /* Standardized Touch Targets (Min 44px Height for Mobile) */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      width: 100%;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 16px;
+      background: var(--accent);
+      color: white;
+      transition: transform 0.1s ease, opacity 0.2s ease;
+    }
+
+    .btn.secondary {
+      background: transparent;
+      color: #111827;
+      border: 2px solid #e5e7eb;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+
+    #statusPreview {
+      margin-top: 12px;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 600;
+      text-align: center;
+    }
+
+    .actions-wrapper {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
     }
   </style>
 </head>
 <body>
+
   <div class="shell" role="main">
-    <div class="main">
-      <div style="margin-bottom:12px;">
-    <a href="index.html" style="text-decoration:none;color:#1E88E5;font-weight:600;">← Home</a>
-  </div>
-      <div class="brand">
+    <a href="index.html" class="back-link">← Home</a>
+    
+    <h1>WhatsApp Zip → Excel</h1>
+    <p class="lead">Upload your WhatsApp exported ZIP file and get clean, parsed mill shift logs downloaded instantly.</p>
+
+    <div class="file-area">
+      <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+      </svg>
+      
+      <div class="hint" id="fileName">No file chosen</div>
+
+      <div class="actions-wrapper">
+        <label for="zipFile" class="btn secondary">Browse File</label>
+        <input type="file" id="zipFile" accept=".zip" onchange="showFile(event)">
         
-        <div> <h1 style="
-  background: linear-gradient(90deg, #25D366 0%, #1E88E5 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  font-weight: 700;
-">
-  WhatsApp Zip → Excel
-</h1>
-
-         
-          <p class="lead">Upload a WhatsApp exported ZIP and get parsed shift logs as an Excel file.</p>
-        </div>
-      </div>
-
-      <div class="file-area" aria-hidden="false">
-  <div class="file-drop">
-    <div>
-      <label class="small">Choose ZIP file</label>
-      <div style="display:flex;gap:10px;align-items:center">
-        <label for="zipFile" class="btn secondary" style="padding:8px 12px;">Browse…</label>
-        <div class="hint" id="fileName">No file chosen</div>
+        <button class="btn" onclick="processZip()">Download Excel</button>
       </div>
     </div>
-  </div>
 
-  <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-    <input type="file" id="zipFile" accept=".zip" onchange="showFile(event)">
-    <button class="btn" onclick="processZip()">Download</button>
-    <div id="statusPreview" style="margin-top:6px;font-size:13px;color:#6b7280;">Waiting for file</div>
+    <div id="statusPreview">Waiting for file</div>
   </div>
-</div>
-</div>
-</div>
 
 <script>
-   function showFile(e){
+function showFile(e){
   const file = e.target.files[0];
   document.getElementById('fileName').textContent = file ? file.name : 'No file chosen';
   document.getElementById('statusPreview').textContent = file ? 'Ready to parse' : 'Waiting for file';
 }
 
 function toProperTitleCase(str) {
- 
-const smallWords = new Set([
-  'and','or','but','for','nor',
-  'a','an','the',
-  'as','at','by','from','in','of','on','to','with',
-  'due','so',
-
-  'hit','change','made','bolt','bend','nose','broken','both','came','tripped','accumulated','modification','check',
-
-  'enter','exit','close','leave','left','open',
-  'crossed','cross','crosses',
-
-  'checking','checked','check','checks',
-
-  'missed','miss','misses',
-
-  'rolled','rolledout','rolledin',
-
-  'same','time',
-
-  'adjustment','adjusted',
-
-  'delay','delayed',
-
-  'removed','remove',
-  'added','add',
-
-  'did','not',
-
-  'repeated','repeat',
-
-  'progress',
-
-  'material',
-
-  'done','out',
-  'formed','between','knocked','down','side'
-
-]);
-
-
+  const smallWords = new Set([
+    'and','or','but','for','nor','a','an','the','as','at','by','from','in','of','on','to','with','due','so',
+    'hit','change','made','bolt','bend','nose','broken','both','came','tripped','accumulated','modification','check',
+    'enter','exit','close','leave','left','open','crossed','cross','crosses','checking','checked','checks',
+    'missed','miss','misses','rolled','rolledout','rolledin','same','time','adjustment','adjusted','delay','delayed',
+    'removed','remove','added','add','did','not','repeated','repeat','progress','material','done','out','formed',
+    'between','knocked','down','side'
+  ]);
 
   return str
     .toLowerCase()
@@ -211,8 +204,6 @@ const smallWords = new Set([
     .join(' ');
 }
 
-
-
 async function processZip(){
   const fileInput = document.getElementById('zipFile');
   if(!fileInput.files[0]){
@@ -225,12 +216,12 @@ async function processZip(){
 
   const jszip = new JSZip();
   const zip = await jszip.loadAsync(file);
- const textPromises = Object.keys(zip.files)
-  .filter(filename => filename.toLowerCase().endsWith('.txt'))
-  .map(filename => zip.files[filename].async('string'));
+  const textPromises = Object.keys(zip.files)
+    .filter(filename => filename.toLowerCase().endsWith('.txt'))
+    .map(filename => zip.files[filename].async('string'));
 
-const texts = await Promise.all(textPromises);
-const allText = texts.join('\n');
+  const texts = await Promise.all(textPromises);
+  const allText = texts.join('\n');
 
   if(!allText){
     alert('No text files found in zip.');
@@ -238,63 +229,65 @@ const allText = texts.join('\n');
     return;
   }
 
-  // Split messages by WhatsApp timestamp pattern
-const messages = allText
-  .split(/\d{2}\/\d{2}\/\d{2},\s*\d{1,2}:\d{2}\s*(?:am|pm)\s*-\s*.+?:/i)
-  .map(m => m.trim())
-  .filter(m => m.length > 20);
+  const messages = allText
+    .split(/\d{2}\/\d{2}\/\d{2},\s*\d{1,2}:\d{2}\s*(?:am|pm)\s*-\s*.+?:/i)
+    .map(m => m.trim())
+    .filter(m => m.length > 20);
+
+  let targetedDate = '';
+  let targetedSize = '';
 
   const records = messages.map(msg => {
     const dateMatch = msg.match(/(\d{2}-\w{3}-\d{4})/);
-    const timeMatch = msg.match(/\*(.*?)\*/);
+    if (dateMatch && !targetedDate) targetedDate = dateMatch[1];
+
+    const sizeMatch = msg.match(/\*(\d+MM)\*/i);
+    if (sizeMatch && !targetedSize) targetedSize = sizeMatch[1];
+
+    const timeMatch = msg.match(/\*(\d{2}:\d{2}\s*-\s*\d{2}:\d{2})\*/);
+    const logTime = timeMatch ? timeMatch[1] : '';
+
     const getField = key => {
-  const start = msg.indexOf(key + ':');
-  if (start === -1) return '';
+      const start = msg.search(new RegExp(key + ':', 'i'));
+      if (start === -1) return '';
+      const value = msg.substring(start + key.length + 1)
+                       .split('\n')[0]
+                       .trim();
+      return value;
+    };
 
-  const value = msg.substring(start + key.length + 1)
-                   .split('\n')[0]
-                   .trim();
-
-  return value;
-};
-
-    let discharged = parseFloat(getField('Discharged')) || 0;
+    let rolled = parseFloat(getField('Rolled')) || 0;
     let cobble = parseFloat(getField('Cobble')) || 0;
     let chop = parseFloat(getField('Chop')) || 0;
-    let hotout = parseFloat(getField('Hotout')) || 0;
 
     let delay = '';
-    const delayStart = msg.indexOf('Delay:');
+    const delayStart = msg.search(/Delays:/i);
     if(delayStart !== -1){
-      let afterDelay = msg.substring(delayStart + 6).trim();
+      let afterDelay = msg.substring(delayStart + 7).trim();
       afterDelay = afterDelay.split(/\*Total:/i)[0].trim();
       
-      // Clean up lines and swap bullet "•" for ">"
       const delayLines = afterDelay.split('\n')
         .map(l => l.trim())
         .filter(l => l.startsWith('•') || l.startsWith('-'))
-        .map(l => l.replace(/^[•-]\s*/, '> ')); // Replaces the bullet/dash with >
+        .map(l => l.replace(/^[•-]\s*/, '> '));
         
-   delay = delayLines
-  .map(line => {
-    // keep "> " symbol intact, format text only
-    if (line.startsWith('>')) {
-      return '> ' + toProperTitleCase(line.substring(2));
-    }
-    return toProperTitleCase(line);
-  })
-  .join('\n');
-
+      delay = delayLines
+        .map(line => {
+          if (line.startsWith('>')) {
+            return '> ' + toProperTitleCase(line.substring(2));
+          }
+          return toProperTitleCase(line);
+        })
+        .join('\n');
     }
 
     return {
-  
-  Time: timeMatch ? timeMatch[1] : '',
-  "Rolled": discharged - hotout,
-  Cobble: cobble === 0 ? '' : cobble,
-  Chop: chop === 0 ? '' : chop,
-  Delay: delay
-};
+      Time: logTime,
+      "Rolled": rolled,
+      Cobble: cobble === 0 ? '' : cobble,
+      Chop: chop === 0 ? '' : chop,
+      Delay: delay
+    };
   });
 
   if(records.length === 0){
@@ -303,32 +296,26 @@ const messages = allText
     return;
   }
 
-const firstDateMatch = allText.match(/(\d{2}-\w{3}-\d{4})/);
-const firstDate = firstDateMatch ? firstDateMatch[1] : '';
+  const worksheetData = [
+    ['Date', targetedDate],
+    ['Size', targetedSize],
+    ['Mill Speed', ''],
+    [],
+    Object.keys(records[0]),
+    ...records.map(r => Object.values(r)),
+    [],
+    ['Day Tonnage', '', 'MT'],
+    ['Night Tonnage', '', 'MT'],
+    ['Billet Rolled', '', 'MT']
+  ];
 
-const worksheetData = [
-  ['Date', firstDate],
-  ['Size', ''],
-  ['Mill Speed', ''],
-  [],
-  Object.keys(records[0]),
-  ...records.map(r => Object.values(r)),
+  const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'ShiftLogs');
 
-  [],
-['Day Tonnage', '', 'MT'],
-  ['Night Tonnage', '', 'MT'],
-  ['Billet Rolled', '', 'MT']
-];
-
-const ws = XLSX.utils.aoa_to_sheet(worksheetData);
-
-const wb = XLSX.utils.book_new();
-XLSX.utils.book_append_sheet(wb, ws, 'ShiftLogs');
-
-XLSX.writeFile(wb, 'WhatsApp_ShiftLogs.xlsx');
-
+  XLSX.writeFile(wb, 'WhatsApp_ShiftLogs.xlsx');
   status.textContent = 'Done — file downloaded';
 }
-  </script>
+</script>
 </body>
 </html>
