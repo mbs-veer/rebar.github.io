@@ -77,7 +77,7 @@
             color: var(--primary-dark);
         }
 
-        .form-group input, .form-group select {
+        .form-group input {
             width: 100%;
             padding: 10px;
             border: 1px solid var(--border-color);
@@ -87,7 +87,36 @@
             transition: border 0.2s;
         }
 
-        .form-group input:focus, .form-group select:focus {
+        .form-group input:focus {
+            border-color: var(--primary);
+        }
+
+        /* Shift Buttons Container */
+        .shift-btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .shift-btn {
+            padding: 10px 16px;
+            border: 1px solid var(--border-color);
+            background: white;
+            color: var(--text-dark);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .shift-btn:hover {
+            background: #f0f0f0;
+        }
+
+        .shift-btn.active {
+            background: var(--primary);
+            color: white;
             border-color: var(--primary);
         }
 
@@ -160,6 +189,7 @@
         .status-btn.selected-A { background: #c62828; color: white; border-color: #c62828; }
         .status-btn.selected-W { background: #1565c0; color: white; border-color: #1565c0; }
         .status-btn.selected-ML { background: #ef6c00; color: white; border-color: #ef6c00; }
+        .status-btn.selected-AL { background: #e65100; color: white; border-color: #e65100; }
 
         .action-bar {
             position: sticky;
@@ -194,6 +224,7 @@
         .stat-A { background: #ffebee; color: #c62828; }
         .stat-W { background: #e3f2fd; color: #1565c0; }
         .stat-ML { background: #fff3e0; color: #ef6c00; }
+        .stat-AL { background: #fff3e0; color: #e65100; }
 
         .btn-whatsapp {
             background-color: #25D366;
@@ -287,15 +318,14 @@
             <input type="date" id="attendance-date">
         </div>
         <div class="form-group">
-            <label for="attendance-shift">Select Shift</label>
-            <select id="attendance-shift">
-                <option value="DAY">DAY</option>
-                <option value="NIGHT">NIGHT</option>
-                <option value="A Shift">A Shift</option>
-                <option value="B Shift">B Shift</option>
-                <option value="C Shift">C Shift</option>
-                
-            </select>
+            <label>Select Shift</label>
+            <div class="shift-btn-group" id="shift-group">
+                <button type="button" class="shift-btn active" data-shift="DAY">DAY</button>
+                <button type="button" class="shift-btn" data-shift="NIGHT">NIGHT</button>
+                <button type="button" class="shift-btn" data-shift="A Shift">A Shift</button>
+                <button type="button" class="shift-btn" data-shift="B Shift">B Shift</button>
+                <button type="button" class="shift-btn" data-shift="C Shift">C Shift</button>
+            </div>
         </div>
     </div>
 
@@ -313,6 +343,7 @@
             <span class="stat-badge stat-A">A: <span id="count-A">0</span></span>
             <span class="stat-badge stat-W">W: <span id="count-W">0</span></span>
             <span class="stat-badge stat-ML">ML: <span id="count-ML">0</span></span>
+            <span class="stat-badge stat-AL">AL: <span id="count-AL">0</span></span>
         </div>
         <button type="button" class="btn-whatsapp" onclick="shareOnWhatsApp()">
             <svg width="20" height="20" viewBox="0 0 448 512" fill="white"><path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L0 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z"/></svg>
@@ -324,16 +355,17 @@
 <script>
     // Embedded JSON data from original Excel Sheet
     const data = {
-"Shift in Charge": ["Dev Prakash Singh", "Muni Babu", "Suriyaprasad Manoharan"],
+      "Shift in Charge": ["Dev Prakash Singh", "Muni Babu", "Suriyaprasad Manoharan"],
       "Re-Heating Furnace Engineer": ["Ganesh Mensesina"],
       "Main Pulpit Operator": ["Ghulam Muhammad", "Sunil Gadi", "Rahul Singh Harish"],
       "Mill Roller": ["Raman Kumar", "Mohammad Kamarae Alam", "Nadir Ali", "Danish Ali", "Momtaj Miyan", "Akmal Aziz", "Navatej Bahadur Singh", "Muhammad Daniyal", "Asad Jameel", "Muhammad Qaisar", "Shakeeb Arsalan", "Binod Kumar Mahrana", "Meddie Ndyanabo", "Bindalal Sharma"],
       "Furnace Operator": ["Karimullah Dawood", "Muhammad Imran Khan", "Shahzaib Ishaq", "Usama Sharif", "Bharathi Rajendran", "Subash Thangaraj"],
       "Gas Cutter": ["Shivshankar Rahate", "Amarnath Yadav", "Muhammad Nadeem Ajmal", "Fiaz Ahmad Allah", "Muhammad Adil Umar"],
       "OH Crane Operator": ["Tarkeshwar Singh", "Zaheer Abbas", "Srilal Yadav", "Vikash Kumar Singh", "Aswani Kumar Yadav", "Muhammad Ismail", "Loknath Yadav"]
-      
+    };
 
-      };
+    // Global variable tracking active shift selection
+    let activeShift = "DAY";
 
     // Calculate total absolute numbers of employees across all departments
     const globalTotalEmployees = Object.values(data).reduce((acc, curr) => acc + curr.length, 0);
@@ -346,9 +378,19 @@
     // Set Default Date to Today
     document.getElementById('attendance-date').valueAsDate = new Date();
     
-    // Add event listeners to Meta inputs so the preview updates when date/shift changes!
+    // Add event listeners to Date input
     document.getElementById('attendance-date').addEventListener('change', updateSummary);
-    document.getElementById('attendance-shift').addEventListener('change', updateSummary);
+
+    // Dynamic handling of Shift Buttons
+    const shiftButtons = document.querySelectorAll('.shift-btn');
+    shiftButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            shiftButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            activeShift = this.dataset.shift;
+            updateSummary();
+        });
+    });
 
     const container = document.getElementById('attendance-container');
 
@@ -377,7 +419,8 @@
             const statusGroup = document.createElement('div');
             statusGroup.className = 'status-group';
 
-            ['P', 'A', 'W', 'ML'].forEach(status => {
+            // Added 'AL' option here
+            ['P', 'A', 'W', 'ML', 'AL'].forEach(status => {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'status-btn';
@@ -410,7 +453,7 @@
 
     // Update real-time statistics counter and text preview
     function updateSummary() {
-        let counts = { 'P': 0, 'A': 0, 'W': 0, 'ML': 0 };
+        let counts = { 'P': 0, 'A': 0, 'W': 0, 'ML': 0, 'AL': 0 };
         
         // Find all currently active selected buttons across the interface
         const selectedButtons = document.querySelectorAll('.status-btn[class*="selected-"]');
@@ -427,6 +470,7 @@
         document.getElementById('count-A').textContent = counts['A'];
         document.getElementById('count-W').textContent = counts['W'];
         document.getElementById('count-ML').textContent = counts['ML'];
+        document.getElementById('count-AL').textContent = counts['AL'];
 
         // Generate Preview text
         const text = generateMessageText();
@@ -446,7 +490,7 @@
     // Build formatted message text for WhatsApp
     function generateMessageText() {
         const dateVal = document.getElementById('attendance-date').value;
-        const shiftVal = document.getElementById('attendance-shift').value;
+        const shiftVal = activeShift;
         
         let dateFormatted = "Not Selected";
         if (dateVal) {
@@ -469,6 +513,7 @@
             let aList = [];
             let wList = [];
             let mlList = [];
+            let alList = [];
 
             selected.forEach(btn => {
                 const name = btn.dataset.name;
@@ -477,6 +522,7 @@
                 else if (status === 'A') aList.push(name);
                 else if (status === 'W') wList.push(name);
                 else if (status === 'ML') mlList.push(name);
+                else if (status === 'AL') alList.push(name);
             });
 
             if (selected.length > 0) {
@@ -485,6 +531,7 @@
                 if (aList.length > 0) msg += `*Absent (${aList.length}):*\n${numberedList(aList)}\n`;
                 if (wList.length > 0) msg += `*Weekly Off (${wList.length}):*\n${numberedList(wList)}\n`;
                 if (mlList.length > 0) msg += `*Medical Leave (${mlList.length}):*\n${numberedList(mlList)}\n`;
+                if (alList.length > 0) msg += `*Annual Leave (${alList.length}):*\n${numberedList(alList)}\n`;
                 msg += `\n`;
             }
         }
@@ -494,6 +541,7 @@
         const aTotal = document.getElementById('count-A').textContent;
         const wTotal = document.getElementById('count-W').textContent;
         const mlTotal = document.getElementById('count-ML').textContent;
+        const alTotal = document.getElementById('count-AL').textContent;
         const grandTotal = document.getElementById('count-total').textContent;
 
         msg += `=========================\n`;
@@ -502,6 +550,7 @@
         msg += `Absent (A): *${aTotal}*\n`;
         msg += `Weekly Off (W): *${wTotal}*\n`;
         msg += `Medical Leave (ML): *${mlTotal}*\n`;
+        msg += `Annual Leave (AL): *${alTotal}*\n`;
         msg += `Total Strength: *${grandTotal}*\n`;
 
         return msg;
