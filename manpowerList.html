@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Team Reference Roster</title>
+    <style>
+        :root {
+            --primary-color: #1e293b;
+            --accent-color: #0284c7;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #334155;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            padding: 2rem 1rem;
+            line-height: 1.5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        h1 {
+            color: var(--primary-color);
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+
+        .search-container {
+            position: relative;
+            width: 100%;
+            max-width: 350px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        /* Spreading leadership cards wider if necessary */
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .section-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.25rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .count-badge {
+            font-size: 0.8rem;
+            background: var(--bg-color);
+            color: var(--text-muted);
+            padding: 0.1rem 0.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .member-list {
+            list-style: none;
+        }
+
+        .member-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .member-item:last-child {
+            border-bottom: none;
+        }
+
+        .member-name {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .member-id {
+            font-family: monospace;
+            background-color: #f1f5f9;
+            color: var(--text-muted);
+            padding: 0.15rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>Production Plant Roster</h1>
+        </div>
+        <div class="search-container">
+            <input type="text" id="searchBar" class="search-input" placeholder="Search by name or ID...">
+        </div>
+    </header>
+
+    <div class="grid">
+        <!-- Plant Management -->
+        <div class="section-card full-width card-group">
+            <div class="section-title">Plant Leadership <span class="count-badge">2</span></div>
+            <ul class="member-list">
+                <li class="member-item">
+                    <span class="member-name">Veerakesari Duraisamy <small style="color:var(--text-muted); ml-2;">(Production Manager)</small></span>
+                    <span class="member-id">6515</span>
+                </li>
+                <li class="member-item">
+                    <span class="member-name">Mahendra Gajulappalli <small style="color:var(--text-muted);">(Assistant Production Manager)</small></span>
+                    <span class="member-id">6531</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Shift In Charge -->
+        <div class="section-card card-group">
+            <div class="section-title">Shift In Charge <span class="count-badge">3</span></div>
+            <ul class="member-list">
+                <li class="member-item"><span class="member-name">Dev Prakash Singh</span><span class="member-id">6643</span></li>
+                <li class="member-item"><span class="member-name">Muni Babu</span><span class="member-id">6540</span></li>
+                <li class="member-item"><span class="member-name">Suriyaprasad Manoharan</span><span class="member-id">6182</span></li>
+            </ul>
+        </div>
+
+        <!-- Main Pulpit Operators -->
+        <div class="section-card card-group">
+            <div class="section-title">Main Pulpit Operators <span class="count-badge">3</span></div>
+            <ul class="member-list">
+                <li class="member-item"><span class="member-name">Ghulam Muhammad</span><span class="member-id">6404</span></li>
+                <li class="member-item"><span class="member-name">Sunil Gadi</span><span class="member-id">6670</span></li>
+                <li class="member-item"><span class="member-name">Rahul Singh Harish</span><span class="member-id">6635</span></li>
+            </ul>
+        </div>
+
+        <!-- Furnace Section -->
+        <div class="section-card card-group">
+            <div class="section-title">Furnace & Engineering <span class="count-badge">6</span></div>
+            <ul class="member-list">
+                <li class="member-item"><span class="member-name">Ganesh Mensesina <small style="color:var(--text-muted);">(Re-Heating Eng.)</small></span><span class="member-id">6584</span></li>
+                <li class="member-item"><span class="member-name">Karimullah Dawood</span><span class="member-id">6045</span></li>
+                <li class="member-item"><span class="member-name">Muhammad Imran Khan</span><span class="member-id">6293</span></li>
+                <li class="member-item"><span class="member-name">Shahzaib Ishaq</span><span class="member-id">6286</span></li>
+                <li class="member-item"><span class="member-name">Usama Sharif</span><span class="member-id">6228</span></li>
+                <li class="member-item"><span class="member-name">Bharathi Rajendran</span><span class="member-id">6234</span></li>
+            </ul>
+        </div>
+
+        <!-- Finishing Pulpit Operators -->
+        <div class="section-card card-group">
+            <div class="section-title">Finishing Pulpit Operators <span class="count-badge">5</span></div>
+            <ul class="member-list">
+                <li class="member-item"><span class="member-name">Suleman Mansoor</span><span class="member-id">6260</span></li>
+                <li class="member-item"><span class="member-name">Anab Khushal</span><span class="member-id">6216</span></li>
+                <li class="member-item"><span class="member-name">Ahtasham Ul Haq</span><span class="member-id">6261</span></li>
+                <li class="member-item"><span class="member-name">Pralhad Chauhan</span><span class="member-id">6243</span></li>
+                <li class="member-item"><span class="member-name">Murugan Vengadasalam</span><span class="member-id">6614</span></li>
+            </ul>
+        </div>
+
+        <!-- OH Crane Operators -->
+        <div class="section-card card-group">
+            <div class="section-title">OH Crane Operators <span class="count-badge">7</span></div>
+            <ul class="member-list">
+                <li class="member-item"><span class="member-name">Tarkeshwar Singh</span><span class="member-id">6361</span></li>
+                <li class="member-item"><span class="member-name">Zaheer Abbas</span><span class="member-id">6436</span></li>
+                <li class="member-item"><span class="member-name">Srilal Yadav</span><span class="member-id">6669</span></li>
+                <li class="member-item"><span class="member-name">Vikash Kumar Singh</span><span class="member-id">6655</span></li>
+                <li class="member-item"><span class="member-name">Aswani Kumar Yadav</span><span class="member-id">6238</span></li>
+                <li class="member-item"><span class="member-name">Muhammad Ismail</span><span class="member-id">6420</span></li>
+                <li class="member-item"><span class="member-name">Loknath Yadav</span><span class="member-id">6572</span></li>
+            </ul>
+        </div>
+
+        <!-- Gas Cutters -->
+        <div class="section-card card-group">
+            <div class="section-title">Gas Cutters <span class="count-badge">5</span></div>
+            <ul class="member-list">
+                <li class="member-item"><span class="member-name">Shivshankar Rahate</span><span class="member-id">6345</span></li>
+                <li class="member-item"><span class="member-name">Amarnath Yadav</span><span class="member-id">6580</span></li>
+                <li class="member-item"><span class="member-name">Muhammad Nadeem Ajmal</span><span class="member-id">6446</span></li>
+                <li class="member-item"><span class="member-name">Fiaz Ahmad Allah</span><span class="member-id">6445</span></li>
+                <li class="member-item"><span class="member-name">Muhammad Adil Umar</span><span class="member-id">6432</span></li>
+            </ul>
+        </div>
+
+        <!-- Mill Rollers -->
+        <div class="section-card card-group">
+            <div class="section-title">Mill Rollers <span class="count-badge">14</span></div>
+            <ul class="member-list">
+                <li class="member-item"><span class="member-name">Raman Kumar</span><span class="member-id">6117</span></li>
+                <li class="member-item"><span class="member-name">Mohammad Kamarae Alam</span><span class="member-id">6514</span></li>
+                <li class="member-item"><span class="member-name">Nadir Ali</span><span class="member-id">6421</span></li>
+                <li class="member-item"><span class="member-name">Danish Ali</span><span class="member-id">6392</span></li>
+                <li class="member-item"><span class="member-name">Momtaj Miyan</span><span class="member-id">6653</span></li>
+                <li class="member-item"><span class="member-name">Akmal Aziz</span><span class="member-id">6423</span></li>
+                <li class="member-item"><span class="member-name">Navatej Bahadur Singh</span><span class="member-id">6648</span></li>
+                <li class="member-item"><span class="member-name">Muhammad Daniyal</span><span class="member-id">6402</span></li>
+                <li class="member-item"><span class="member-name">Asad Jameel</span><span class="member-id">6380</span></li>
+                <li class="member-item"><span class="member-name">Muhammad Qaisar</span><span class="member-id">6395</span></li>
+                <li class="member-item"><span class="member-name">Shakeeb Arsalan</span><span class="member-id">6444</span></li>
+                <li class="member-item"><span class="member-name">Binod Kumar Mahrana</span><span class="member-id">6520</span></li>
+                <li class="member-item"><span class="member-name">Meddie Ndyanabo</span><span class="member-id">6312</span></li>
+                <li class="member-item"><span class="member-name">Bindalal Sharma</span><span class="member-id">6213</span></li>
+            </ul>
+        </div>
+
+        <!-- Segregation Assistants -->
+        <div class="section-card card-group">
+            <div class="section-title">Segregation Assistants <span class="count-badge">27</span></div>
+            <ul class="member-list">
+                <li class="member-item"><span class="member-name">Subash Thangaraj</span><span class="member-id">6659</span></li>
+                <li class="member-item"><span class="member-name">Muhammad Ali Hanif</span><span class="member-id">6480</span></li>
+                <li class="member-item"><span class="member-name">Vinod Yadav Nagina</span><span class="member-id">6633</span></li>
+                <li class="member-item"><span class="member-name">Pradip Rajvanashi</span><span class="member-id">6575</span></li>
+                <li class="member-item"><span class="member-name">MD Azad Ansari</span><span class="member-id">6576</span></li>
+                <li class="member-item"><span class="member-name">Jabbar Ahmed</span><span class="member-id">6476</span></li>
+                <li class="member-item"><span class="member-name">Anavar Shah</span><span class="member-id">6657</span></li>
+                <li class="member-item"><span class="member-name">MD Manvar Khan</span><span class="member-id">6638</span></li>
+                <li class="member-item"><span class="member-name">Aqib Ashiq</span><span class="member-id">6193</span></li>
+                <li class="member-item"><span class="member-name">Shafiki Mugema</span><span class="member-id">6311</span></li>
+                <li class="member-item"><span class="member-name">Alamgir Shabir Ali</span><span class="member-id">6639</span></li>
+                <li class="member-item"><span class="member-name">Tayyab Hussain</span><span class="member-id">6192</span></li>
+                <li class="member-item"><span class="member-name">Rakesh Kumar Mangu Ram</span><span class="member-id">6490</span></li>
+                <li class="member-item"><span class="member-name">Parvez Ansari Ibrahim</span><span class="member-id">6578</span></li>
+                <li class="member-item"><span class="member-name">Sandeep Kumar Sah</span><span class="member-id">6618</span></li>
+                <li class="member-item"><span class="member-name">Sulaiman Abdul Aziz Mutebi</span><span class="member-id">6315</span></li>
+                <li class="member-item"><span class="member-name">MD Jilani Ansari</span><span class="member-id">6574</span></li>
+                <li class="member-item"><span class="member-name">Muhammad Sajid Sher</span><span class="member-id">6477</span></li>
+                <li class="member-item"><span class="member-name">Heera Lal Nageshvar</span><span class="member-id">6617</span></li>
+                <li class="member-item"><span class="member-name">Vishal Yadav Savaru</span><span class="member-id">6636</span></li>
+                <li class="member-item"><span class="member-name">Mohammad Ataur Rahman</span><span class="member-id">6646</span></li>
+                <li class="member-item"><span class="member-name">Mohammad Hasan Raza</span><span class="member-id">6640</span></li>
+                <li class="member-item"><span class="member-name">Abdallah Umar</span><span class="member-id">6262</span></li>
+                <li class="member-item"><span class="member-name">Firoz Alam</span><span class="member-id">6232</span></li>
+                <li class="member-item"><span class="member-name">Prabhu Kumar Ram</span><span class="member-id">6620</span></li>
+                <li class="member-item"><span class="member-name">Rajkumar Chauhan</span><span class="member-id">6075</span></li>
+                <li class="member-item"><span class="member-name">Prince Singh</span><span class="member-id">6682</span></li>
+                <li class="member-item"><span class="member-name">Parvinder Singh Anand</span><span class="member-id">6683</span></li>
+                <li class="member-item"><span class="member-name">Mandeep Singh Shohet</span><span class="member-id">6684</span></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('searchBar').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        const cardGroups = document.querySelectorAll('.card-group');
+
+        cardGroups.forEach(card => {
+            const items = card.querySelectorAll('.member-item');
+            let visibleItemsInCard = 0;
+
+            items.forEach(item => {
+                const name = item.querySelector('.member-name').textContent.toLowerCase();
+                const id = item.querySelector('.member-id').textContent.toLowerCase();
+
+                if (name.includes(searchTerm) || id.includes(searchTerm)) {
+                    item.classList.remove('hidden');
+                    visibleItemsInCard++;
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+
+            // Hide the entire category card if no members match the search criteria
+            if (visibleItemsInCard === 0 && searchTerm !== "") {
+                card.classList.add('hidden');
+            } else {
+                card.classList.remove('hidden');
+            }
+        });
+    });
+</script>
+</body>
+</html>
