@@ -3,13 +3,12 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>WhatsApp Zip → Excel</title>
+  <title>WhatsApp Zip → Excel Converter</title>
 
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght=400;600;700&display=swap" rel="stylesheet">
 
   <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://unpkg.com/xlsx-js-style/dist/xlsx.bundle.js"></script>
   
   <style>
     :root {
@@ -40,7 +39,7 @@
 
     .shell {
       width: 100%;
-      max-width: 500px; /* Perfect sizing for mobile screens & neat on desktop */
+      max-width: 500px;
       background: var(--card);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
@@ -72,7 +71,6 @@
       line-height: 1.5;
     }
 
-    /* Core Mobile Dropzone styling */
     .file-area {
       border: 2px dashed #e5e7eb;
       background: #fafafa;
@@ -103,7 +101,6 @@
       max-width: 100%;
     }
 
-    /* Standardized Touch Targets (Min 44px Height for Mobile) */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -152,7 +149,7 @@
 <body>
 
   <div class="shell" role="main">
-    <a href="index.html" class="back-link">← Home</a>
+    <a href="#" class="back-link">← Home</a>
     
     <h1>WhatsApp Zip → Excel</h1>
     <p class="lead">Upload your WhatsApp exported ZIP file and get clean, parsed mill shift logs downloaded instantly.</p>
@@ -214,107 +211,128 @@ async function processZip(){
   const status = document.getElementById('statusPreview');
   status.textContent = 'Parsing...';
 
-  const jszip = new JSZip();
-  const zip = await jszip.loadAsync(file);
-  const textPromises = Object.keys(zip.files)
-    .filter(filename => filename.toLowerCase().endsWith('.txt'))
-    .map(filename => zip.files[filename].async('string'));
+  try {
+    const jszip = new JSZip();
+    const zip = await jszip.loadAsync(file);
+    const textPromises = Object.keys(zip.files)
+      .filter(filename => filename.toLowerCase().endsWith('.txt'))
+      .map(filename => zip.files[filename].async('string'));
 
-  const texts = await Promise.all(textPromises);
-  const allText = texts.join('\n');
+    const texts = await Promise.all(textPromises);
+    const allText = texts.join('\n');
 
-  if(!allText){
-    alert('No text files found in zip.');
-    status.textContent = 'No text files found';
-    return;
-  }
-
-  const messages = allText
-    .split(/\d{2}\/\d{2}\/\d{2},\s*\d{1,2}:\d{2}\s*(?:am|pm)\s*-\s*.+?:/i)
-    .map(m => m.trim())
-    .filter(m => m.length > 20);
-
-  let targetedDate = '';
-  let targetedSize = '';
-
-  const records = messages.map(msg => {
-    const dateMatch = msg.match(/(\d{2}-\w{3}-\d{4})/);
-    if (dateMatch && !targetedDate) targetedDate = dateMatch[1];
-
-    const sizeMatch = msg.match(/\*(\d+MM)\*/i);
-    if (sizeMatch && !targetedSize) targetedSize = sizeMatch[1];
-
-    const timeMatch = msg.match(/\*(\d{2}:\d{2}\s*-\s*\d{2}:\d{2})\*/);
-    const logTime = timeMatch ? timeMatch[1] : '';
-
-    const getField = key => {
-      const start = msg.search(new RegExp(key + ':', 'i'));
-      if (start === -1) return '';
-      const value = msg.substring(start + key.length + 1)
-                       .split('\n')[0]
-                       .trim();
-      return value;
-    };
-
-    let rolled = parseFloat(getField('Rolled')) || 0;
-    let cobble = parseFloat(getField('Cobble')) || 0;
-    let chop = parseFloat(getField('Chop')) || 0;
-
-    let delay = '';
-    const delayStart = msg.search(/Delays:/i);
-    if(delayStart !== -1){
-      let afterDelay = msg.substring(delayStart + 7).trim();
-      afterDelay = afterDelay.split(/\*Total:/i)[0].trim();
-      
-      const delayLines = afterDelay.split('\n')
-        .map(l => l.trim())
-        .filter(l => l.startsWith('•') || l.startsWith('-'))
-        .map(l => l.replace(/^[•-]\s*/, '> '));
-        
-      delay = delayLines
-        .map(line => {
-          if (line.startsWith('>')) {
-            return '> ' + toProperTitleCase(line.substring(2));
-          }
-          return toProperTitleCase(line);
-        })
-        .join('\n');
+    if(!allText.trim()){
+      alert('No text files found or the files are empty.');
+      status.textContent = 'No text files found';
+      return;
     }
 
-    return {
-      Time: logTime,
-      "Rolled": rolled,
-      Cobble: cobble === 0 ? '' : cobble,
-      Chop: chop === 0 ? '' : chop,
-      Delay: delay
-    };
-  });
+    // Adaptable regex to catch: "dd/mm/yy, hh:mm - Sender:" OR "dd/mm/yy, hh:mm AM/PM - Sender:"
+    const messageRegex = /\d{2}\/\d{2}\/\d{2,4},\s*\d{1,2}:\d{2}(?:\s*[aApP][mM])?\s*-\s*[^:]+:/g;
+    
+    // Split text into individual messages
+    const messages = allText.split(messageRegex).map(m => m.trim()).filter(m => m.length > 10);
 
-  if(records.length === 0){
-    alert('No records found. Check format.');
-    status.textContent = 'No records found';
-    return;
+    if(messages.length === 0){
+      alert('Could not isolate message blocks. Please check the text file format.');
+      status.textContent = 'Parsing failed';
+      return;
+    }
+
+    let targetedDate = '';
+    let targetedSize = '';
+    const records = [];
+
+    for (const msg of messages) {
+      // Extract targeted shift date
+      const dateMatch = msg.match(/(\d{2}-(?:[a-zA-Z]{3}|\d{2})-\d{4})/);
+      if (dateMatch && !targetedDate) targetedDate = dateMatch[1];
+
+      // Extract raw target log size (e.g., *12MM* or *16mm*)
+      const sizeMatch = msg.match(/\*(\d+MM)\*/i);
+      if (sizeMatch && !targetedSize) targetedSize = sizeMatch[1].toUpperCase();
+
+      // Extract shift block time window
+      const timeMatch = msg.match(/\*?(\d{2}:\d{2}\s*-\s*\d{2}:\d{2})\*?/);
+      const logTime = timeMatch ? timeMatch[1] : '';
+
+      // Helper to fetch structured fields safely
+      const getField = key => {
+        const regex = new RegExp(key + '\\s*:\\s*(.*)', 'i');
+        const match = msg.match(regex);
+        return match ? match[1].split('\n')[0].trim() : '';
+      };
+
+      let rolled = parseFloat(getField('Rolled')) || 0;
+      let cobble = parseFloat(getField('Cobble')) || 0;
+      let chop = parseFloat(getField('Chop')) || 0;
+
+      // Extract and format delays list dynamically
+      let delay = '';
+      const delayStart = msg.search(/Delays\s*:/i);
+      if(delayStart !== -1){
+        let afterDelay = msg.substring(delayStart + 7).trim();
+        afterDelay = afterDelay.split(/\*?Total\s*:/i)[0].trim();
+        
+        const delayLines = afterDelay.split('\n')
+          .map(l => l.trim())
+          .filter(l => l.startsWith('•') || l.startsWith('-') || l.startsWith('>'))
+          .map(l => l.replace(/^[•->]\s*/, '> '));
+          
+        delay = delayLines
+          .map(line => {
+            if (line.startsWith('>')) {
+              return '> ' + toProperTitleCase(line.substring(2));
+            }
+            return toProperTitleCase(line);
+          })
+          .join('\n');
+      }
+
+      // If we found at least a valid timeline context or structural data, register it
+      if (logTime || rolled || cobble || chop || delay) {
+        records.push({
+          Time: logTime,
+          "Rolled": rolled === 0 ? '' : rolled,
+          Cobble: cobble === 0 ? '' : cobble,
+          Chop: chop === 0 ? '' : chop,
+          Delay: delay
+        });
+      }
+    }
+
+    if(records.length === 0){
+      alert('No structured records could be extracted from your logs.');
+      status.textContent = 'No records found';
+      return;
+    }
+
+    // Build modern SheetJS Object Array layout
+    const worksheetData = [
+      ['Date', targetedDate],
+      ['Size', targetedSize],
+      ['Mill Speed', ''],
+      [],
+      Object.keys(records[0]),
+      ...records.map(r => Object.values(r)),
+      [],
+      ['Day Tonnage', '', 'MT'],
+      ['Night Tonnage', '', 'MT'],
+      ['Billet Rolled', '', 'MT']
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'ShiftLogs');
+
+    XLSX.writeFile(wb, 'WhatsApp_ShiftLogs.xlsx');
+    status.textContent = 'Done — file downloaded';
+    
+  } catch (error) {
+    console.error(error);
+    alert('An unexpected error occurred while parsing the ZIP package.');
+    status.textContent = 'Error processing file';
   }
-
-  const worksheetData = [
-    ['Date', targetedDate],
-    ['Size', targetedSize],
-    ['Mill Speed', ''],
-    [],
-    Object.keys(records[0]),
-    ...records.map(r => Object.values(r)),
-    [],
-    ['Day Tonnage', '', 'MT'],
-    ['Night Tonnage', '', 'MT'],
-    ['Billet Rolled', '', 'MT']
-  ];
-
-  const ws = XLSX.utils.aoa_to_sheet(worksheetData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'ShiftLogs');
-
-  XLSX.writeFile(wb, 'WhatsApp_ShiftLogs.xlsx');
-  status.textContent = 'Done — file downloaded';
 }
 </script>
 </body>
