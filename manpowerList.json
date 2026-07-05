@@ -1,0 +1,106 @@
+{
+  "plant_leadership": [
+    { "name": "Veerakesari Duraisamy (Production Manager)", "id": "6515" },
+    { "name": "Mahendra Gajulappalli (Assistant Production Manager)", "id": "6531" }
+  ],
+  "shift_in_charge": [
+    { "name": "Dev Prakash Singh", "id": "6643" },
+    { "name": "Muni Babu", "id": "6540" },
+    { "name": "Suriyaprasad Manoharan", "id": "6182" },
+    { "name": "To Be Recruited", "id": "VACANT", "isVacancy": true }
+  ],
+  "main_pulpit": [
+    { "name": "Ghulam Muhammad", "id": "6404" },
+    { "name": "Sunil Gadi", "id": "6670" },
+    { "name": "Rahul Singh Harish", "id": "6635" }
+  ],
+  "furnace": [
+    { "name": "Ganesh Mensesina (Re-Heating Eng.)", "id": "6584" },
+    { "name": "Karimullah Dawood", "id": "6045" },
+    { "name": "Muhammad Imran Khan", "id": "6293" },
+    { "name": "Shahzaib Ishaq", "id": "6286" },
+    { "name": "Usama Sharif", "id": "6228" },
+    { "name": "Bharathi Rajendran", "id": "6234" },
+    { "name": "Subash Thangaraj", "id": "6659" }
+  ],
+  "finishing_pulpit": [
+    { "name": "Suleman Mansoor", "id": "6260" },
+    { "name": "Anab Khushal", "id": "6216" },
+    { "name": "Ahtasham Ul Haq", "id": "6261" },
+    { "name": "Pralhad Chauhan", "id": "6243" },
+    { "name": "Murugan Vengadasalam", "id": "6614" }
+  ],
+  "oh_crane": [
+    { "name": "Tarkeshwar Singh", "id": "6361" },
+    { "name": "Zaheer Abbas", "id": "6436" },
+    { "name": "Srilal Yadav", "id": "6669" },
+    { "name": "Vikash Kumar Singh", "id": "6655" },
+    { "name": "Aswani Kumar Yadav", "id": "6238" },
+    { "name": "Muhammad Ismail", "id": "6420" },
+    { "name": "Loknath Yadav", "id": "6572" }
+  ],
+  "gas_cutters": [
+    { "name": "Shivshankar Rahate", "id": "6345" },
+    { "name": "Amarnath Yadav", "id": "6580" },
+    { "name": "Muhammad Nadeem Ajmal", "id": "6446" },
+    { "name": "Fiaz Ahmad Allah", "id": "6445" },
+    { "name": "Muhammad Adil Umar", "id": "6432" },
+    { "name": "To Be Recruited", "id": "VACANT", "isVacancy": true }
+  ],
+  "senior_mill": [
+    { "name": "Raman Kumar", "id": "6117" },
+    { "name": "To Be Recruited", "id": "VACANT", "isVacancy": true }
+  ],
+  "mill_rollers": [
+    { "name": "Mohammad Kamarae Alam", "id": "6514" },
+    { "name": "Nadir Ali", "id": "6421" },
+    { "name": "Danish Ali", "id": "6392" },
+    { "name": "Momtaj Miyan", "id": "6653" },
+    { "name": "Akmal Aziz", "id": "6423" },
+    { "name": "Navatej Bahadur Singh", "id": "6648" },
+    { "name": "Muhammad Daniyal", "id": "6402" },
+    { "name": "Asad Jameel", "id": "6380" },
+    { "name": "Muhammad Qaisar", "id": "6395" },
+    { "name": "Shakeeb Arsalan", "id": "6444" },
+    { "name": "Binod Kumar Mahrana", "id": "6520" },
+    { "name": "Meddie Ndyanabo", "id": "6312" },
+    { "name": "Bindalal Sharma", "id": "6213" },
+    { "name": "To Be Recruited", "id": "VACANT", "isVacancy": true }
+  ],
+  "segregation_assistants": {
+    "active": [
+      { "name": "Vinod Yadav Nagina", "id": "6633" },
+      { "name": "Pradip Rajvanashi", "id": "6575" },
+      { "name": "MD Azad Ansari", "id": "6576" },
+      { "name": "Jabbar Ahmed", "id": "6476" },
+      { "name": "Anavar Shah", "id": "6657" },
+      { "name": "MD Manvar Khan", "id": "6638" },
+      { "name": "Aqib Ashiq", "id": "6193" },
+      { "name": "Shafiki Mugema", "id": "6311" },
+      { "name": "Alamgir Shabir Ali", "id": "6639" },
+      { "name": "Tayyab Hussain", "id": "6192" },
+      { "name": "Rakesh Kumar Mangu Ram", "id": "6490" },
+      { "name": "Parvez Ansari Ibrahim", "id": "6578" },
+      { "name": "Sulaiman Abdul Aziz Mutebi", "id": "6315" },
+      { "name": "MD Jilani Ansari", "id": "6574" },
+      { "name": "Muhammad Sajid Sher", "id": "6477" },
+      { "name": "Heera Lal Nageshvar", "id": "6617" },
+      { "name": "Vishal Yadav Savaru", "id": "6636" },
+      { "name": "Mohammad Ataur Rahman", "id": "6646" },
+      { "name": "Mohammad Hasan Raza", "id": "6640" },
+      { "name": "Abdallah Umar", "id": "6262" },
+      { "name": "Prabhu Kumar Ram", "id": "6620" },
+      { "name": "Rajkumar Chauhan", "id": "6075" },
+      { "name": "Parvinder Singh Anand", "id": "6683" },
+      { "name": "Mandeep Singh Shohet", "id": "6684" }
+    ],
+    "served_notice": [
+      { "name": "Firoz Alam", "id": "6232" },
+      { "name": "Muhammad Ali Hanif", "id": "6480" }
+    ],
+    "inactive": [
+      { "name": "Sandeep Kumar Sah", "id": "6618" },
+      { "name": "Prince Singh", "id": "6682" }
+    ]
+  }
+}
